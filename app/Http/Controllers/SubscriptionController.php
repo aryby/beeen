@@ -197,6 +197,14 @@ class SubscriptionController extends Controller
         return view('subscriptions.success', compact('order'));
     }
 
+    public function paymentPending(Request $request)
+    {
+        $orderId = $request->get('order');
+        $order = Order::findOrFail($orderId);
+
+        return view('subscriptions.pending', compact('order'));
+    }
+
     public function paymentCancel()
     {
         return redirect()->route('subscriptions.index')

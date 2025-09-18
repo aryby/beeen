@@ -68,36 +68,107 @@ class ResellerController extends Controller
             }
         }
 
-        // TODO: Intégration PayPal pour les revendeurs
-        // Pour l'instant, simulation d'un paiement réussi
-
         // Créer ou récupérer le compte revendeur
         $user = auth()->user();
         if (!$user) {
-            // Si pas connecté, créer un compte temporaire ou rediriger vers inscription
             return redirect()->route('register')
                 ->with('info', 'Veuillez créer un compte pour devenir revendeur.');
         }
 
-        $reseller = Reseller::firstOrCreate(
-            ['user_id' => $user->id],
-            ['credits' => 0, 'total_credits_purchased' => 0, 'total_credits_used' => 0]
-        );
+        // Créer une commande pour le pack revendeur
+        $order = \App\Models\Order::create([
+            'user_id' => $user->id,
+            'item_type' => 'reseller_pack',
+            'item_id' => $pack->id,
+            'customer_name' => $validated['customer_name'],
+            'customer_email' => $validated['customer_email'],
+            'customer_address' => $validated['customer_address'],
+            'amount' => $pack->price,
+            'currency' => 'EUR',
+            'payment_method' => 'paypal',
+            'status' => 'pending',
+            'is_guest_order' => false,
+        ]);
 
-        // Ajouter les crédits
-        $reseller->addCredits(
-            $pack->credits,
-            "Achat du pack {$pack->name}",
-            $pack->price
-        );
-
-        // Mettre à jour le rôle utilisateur
-        if ($user->role !== 'reseller') {
-            $user->update(['role' => 'reseller']);
+        // Intégration PayPal
+        $paypalService = new \App\Services\PayPalService();
+        
+        if (!$paypalService->isConfigured()) {
+            return back()->with('error', 'Service de paiement non configuré. Veuillez contacter le support.');
         }
 
-        return redirect()->route('reseller.dashboard')
-            ->with('success', "Pack {$pack->name} acheté avec succès ! Vous avez maintenant {$reseller->credits} crédits.");
+        $result = $paypalService->createPayment(
+            $pack->price,
+            'EUR',
+            "Pack Revendeur {$pack->name} - {$pack->credits} crédits",
+            route('resellers.payment-success', ['order' => $order->id]),
+            route('resellers.checkout', $pack)
+        );
+
+        if ($result['success']) {
+            // Sauvegarder l'ID PayPal
+            $order->update([
+                'payment_id' => $result['order_id'],
+                'status' => 'pending'
+            ]);
+
+            return redirect($result['approval_url']);
+        } else {
+            return back()->with('error', 'Erreur lors de la création du paiement PayPal: ' . $result['error']);
+        }
+    }
+
+    /**
+     * Succès du paiement revendeur
+     */
+    public function paymentSuccess(Request $request, \App\Models\Order $order)
+    {
+        $paypalToken = $request->get('token');
+        $payerId = $request->get('PayerID');
+
+        if (!$paypalToken) {
+            return redirect()->route('resellers.index')
+                ->with('error', 'Informations de paiement manquantes.');
+        }
+
+        // Capturer le paiement PayPal
+        $paypalService = new \App\Services\PayPalService();
+        $result = $paypalService->capturePayment($paypalToken);
+
+        if ($result['success'] && $result['status'] === 'COMPLETED') {
+            // Marquer la commande comme payée
+            $order->update([
+                'status' => 'paid',
+                'payment_details' => $result['data'],
+            ]);
+
+            // Traiter le pack revendeur
+            $pack = ResellerPack::find($order->item_id);
+            $user = $order->user;
+            
+            $reseller = Reseller::firstOrCreate(
+                ['user_id' => $user->id],
+                ['credits' => 0, 'total_credits_purchased' => 0, 'total_credits_used' => 0]
+            );
+
+            // Ajouter les crédits
+            $reseller->addCredits(
+                $pack->credits,
+                "Achat du pack {$pack->name}",
+                $pack->price
+            );
+
+            // Mettre à jour le rôle utilisateur
+            if ($user->role !== 'reseller') {
+                $user->update(['role' => 'reseller']);
+            }
+
+            return redirect()->route('reseller.dashboard')
+                ->with('success', "Pack {$pack->name} acheté avec succès ! Vous avez maintenant {$reseller->credits} crédits.");
+        } else {
+            return redirect()->route('resellers.index')
+                ->with('error', 'Le paiement n\'a pas été confirmé.');
+        }
     }
 
     /**

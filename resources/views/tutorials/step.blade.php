@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.soft-ui')
 
 @section('title', $step->title . ' - ' . $tutorial->title)
 
@@ -31,16 +31,18 @@
     <div class="row">
         <div class="col-lg-8">
             <!-- Step Content -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <span class="badge bg-light text-primary me-2">{{ $currentStepIndex + 1 }}</span>
-                            {{ $step->title }}
-                        </h4>
-                        <span class="badge bg-light text-primary">
-                            {{ $tutorial->device_type_name }}
-                        </span>
+            <div class="card-soft">
+                <div class="card-header text-white position-relative overflow-hidden" style="background: var(--gradient-primary); border-radius: var(--border-radius-soft-lg) var(--border-radius-soft-lg) 0 0;">
+                    <div class="position-relative">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold">
+                                <span class="badge me-2" style="background: rgba(255,255,255,0.2); color: white;">{{ $currentStepIndex + 1 }}</span>
+                                {{ $step->title }}
+                            </h4>
+                            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;">
+                                {{ $tutorial->device_type_name }}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body p-4">
@@ -77,29 +79,29 @@
             <div class="d-flex justify-content-between align-items-center mt-4">
                 @if($previousStep)
                     <a href="{{ route('tutorials.step', [$tutorial, $previousStep]) }}" 
-                       class="btn btn-outline-secondary">
+                       class="btn btn-soft-outline">
                         <i class="bi bi-arrow-left me-2"></i>Étape précédente
                     </a>
                 @else
                     <a href="{{ route('tutorials.show', $tutorial) }}" 
-                       class="btn btn-outline-secondary">
+                       class="btn btn-soft-outline">
                         <i class="bi bi-arrow-left me-2"></i>Retour au tutoriel
                     </a>
                 @endif
                 
                 @if($nextStep)
                     <a href="{{ route('tutorials.step', [$tutorial, $nextStep]) }}" 
-                       class="btn btn-primary">
+                       class="btn btn-soft btn-soft-primary">
                         Étape suivante<i class="bi bi-arrow-right ms-2"></i>
                     </a>
                 @else
                     <div class="text-end">
                         <div class="mb-2">
-                            <span class="badge bg-success fs-6">
+                            <span class="badge fs-6" style="background: var(--gradient-success); color: white;">
                                 <i class="bi bi-check-circle me-1"></i>Tutoriel terminé !
                             </span>
                         </div>
-                        <a href="{{ route('tutorials.index') }}" class="btn btn-success">
+                        <a href="{{ route('tutorials.index') }}" class="btn btn-soft btn-soft-success">
                             <i class="bi bi-collection me-2"></i>Autres tutoriels
                         </a>
                     </div>

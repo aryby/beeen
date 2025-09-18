@@ -74,6 +74,11 @@ class Order extends Model
         return $this->belongsTo(ResellerPack::class, 'item_id');
     }
 
+    public function adminMessages()
+    {
+        return $this->hasMany(AdminMessage::class);
+    }
+
     /**
      * Scopes
      */
@@ -98,6 +103,11 @@ class Order extends Model
     public function isPaid()
     {
         return $this->status === 'paid';
+    }
+
+    public function isPaidPendingValidation()
+    {
+        return $this->status === 'paid_pending_validation';
     }
 
     public function isPending()

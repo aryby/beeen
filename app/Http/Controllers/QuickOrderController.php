@@ -187,9 +187,9 @@ class QuickOrderController extends Controller
     {
         \Log::info('Using PayPal simulation for order: ' . $order->id);
         
-        // Simuler un paiement réussi
+        // Marquer comme payé mais en attente de validation admin
         $order->update([
-            'status' => 'paid',
+            'status' => 'paid_pending_validation',
             'payment_id' => 'PAYPAL-SIM-' . strtoupper(Str::random(15)),
             'payment_details' => [
                 'simulation' => true,
@@ -201,6 +201,7 @@ class QuickOrderController extends Controller
 
         // Traitement selon le type
         if ($itemType === 'reseller_pack') {
+            // Pour les packs revendeur, traitement immédiat (pas besoin validation admin)
             $pack = ResellerPack::find($order->item_id);
             $reseller = Reseller::firstOrCreate(
                 ['user_id' => $order->user_id],
@@ -209,21 +210,22 @@ class QuickOrderController extends Controller
             
             $reseller->addCredits($pack->credits, "Achat pack {$pack->name} (simulation)", $pack->price);
             $order->user->update(['role' => 'reseller']);
+            $order->update(['status' => 'paid']); // Validation automatique pour packs
             
             $redirectUrl = route('reseller.dashboard');
         } else {
-            $order->generateIptvCode();
-            $order->setExpirationDate();
+            // Pour les abonnements, attendre validation admin
+            // NE PAS générer le code IPTV maintenant
             
-            // Envoyer email de confirmation
+            // Envoyer email de confirmation de commande (sans code IPTV)
             try {
                 \Illuminate\Support\Facades\Mail::to($order->customer_email)
-                    ->send(new \App\Mail\OrderConfirmation($order));
+                    ->send(new \App\Mail\OrderPendingValidation($order));
             } catch (\Exception $e) {
                 \Log::error('Email error in simulation: ' . $e->getMessage());
             }
             
-            $redirectUrl = route('payment.success', ['order' => $order->id]);
+            $redirectUrl = route('payment.pending', ['order' => $order->id]);
         }
 
         return response()->json([

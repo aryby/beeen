@@ -58,9 +58,29 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $order->load(['user', 'subscription']);
-        
-        return view('admin.orders.show', compact('order'));
+        try {
+            $order->load(['user', 'subscription', 'resellerPack']);
+            
+            // Récupérer les détails PayPal si disponible (de manière asynchrone pour éviter les ralentissements)
+            $paypalDetails = null;
+            if ($order->payment_id && str_starts_with($order->payment_id, 'PAYPAL-')) {
+                try {
+                    $paypalService = new PayPalService();
+                    $result = $paypalService->getPaymentDetails($order->payment_id);
+                    if ($result['success']) {
+                        $paypalDetails = $result['data'];
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('PayPal details fetch failed: ' . $e->getMessage());
+                }
+            }
+            
+            return view('admin.orders.show', compact('order', 'paypalDetails'));
+        } catch (\Exception $e) {
+            \Log::error('Order show error: ' . $e->getMessage());
+            return redirect()->route('admin.orders.index')
+                ->with('error', 'Erreur lors du chargement de la commande.');
+        }
     }
 
     /**
@@ -68,16 +88,21 @@ class OrderController extends Controller
      */
     public function validate(Order $order)
     {
-        if ($order->isPaid()) {
+        if ($order->status === 'paid') {
             return redirect()->back()
-                ->with('warning', 'Cette commande est déjà validée.');
+                ->with('warning', 'Cette commande est déjà validée et le code IPTV a été envoyé.');
         }
 
+        // Marquer comme validé et générer le code IPTV
         $order->update(['status' => 'paid']);
-        $order->generateIptvCode();
-        $order->setExpirationDate();
+        
+        // Générer le code IPTV seulement maintenant (après validation admin)
+        if ($order->subscription_id && !$order->iptv_code) {
+            $order->generateIptvCode();
+            $order->setExpirationDate();
+        }
 
-        // Envoyer l'email de confirmation
+        // Envoyer l'email de confirmation avec le code IPTV
         try {
             Mail::to($order->customer_email)->send(new \App\Mail\OrderConfirmation($order));
         } catch (\Exception $e) {
@@ -85,7 +110,7 @@ class OrderController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', 'Commande validée avec succès. Email de confirmation envoyé.');
+            ->with('success', 'Commande validée avec succès ! Code IPTV généré et email envoyé au client.');
     }
 
     /**
@@ -116,19 +141,54 @@ class OrderController extends Controller
                 ->with('error', 'Seules les commandes payées peuvent être remboursées.');
         }
 
+        if ($order->status === 'refunded') {
+            return redirect()->back()
+                ->with('error', 'Cette commande a déjà été remboursée.');
+        }
+
         $validated = $request->validate([
             'refund_amount' => 'nullable|numeric|min:0.01|max:' . $order->amount,
             'refund_reason' => 'nullable|string|max:500',
         ]);
 
         $refundAmount = $validated['refund_amount'] ?? $order->amount;
+        $refundSuccess = false;
+        $paypalRefundId = null;
 
         // Tenter le remboursement via PayPal
         if ($order->payment_id && str_starts_with($order->payment_id, 'PAYPAL-')) {
             $paypalService = new PayPalService();
             
-            // TODO: Implémenter le remboursement PayPal réel
-            // $result = $paypalService->refundPayment($order->payment_id, $refundAmount);
+            // Récupérer les détails du paiement pour obtenir le capture_id
+            $paymentDetails = $paypalService->getPaymentDetails($order->payment_id);
+            
+            if ($paymentDetails['success']) {
+                $data = $paymentDetails['data'];
+                
+                // Trouver le capture_id dans les purchase_units
+                $captureId = null;
+                if (isset($data['purchase_units'][0]['payments']['captures'][0]['id'])) {
+                    $captureId = $data['purchase_units'][0]['payments']['captures'][0]['id'];
+                }
+                
+                if ($captureId) {
+                    $result = $paypalService->refundPayment($captureId, $refundAmount);
+                    if ($result['success']) {
+                        $refundSuccess = true;
+                        $paypalRefundId = $result['data']['id'] ?? null;
+                    } else {
+                        \Log::error('PayPal refund failed: ' . $result['error']);
+                    }
+                }
+            }
+        } else {
+            // Pour les commandes non-PayPal, marquer comme remboursé manuellement
+            $refundSuccess = true;
+        }
+
+        if (!$refundSuccess) {
+            return redirect()->back()
+                ->with('error', 'Erreur lors du remboursement PayPal. Veuillez contacter le support technique.');
         }
 
         // Marquer comme remboursé
@@ -137,7 +197,19 @@ class OrderController extends Controller
             'refund_amount' => $refundAmount,
             'refund_reason' => $validated['refund_reason'],
             'refunded_at' => now(),
+            'payment_details' => array_merge($order->payment_details ?? [], [
+                'refund_id' => $paypalRefundId,
+                'refunded_at' => now()->toISOString(),
+                'refund_amount' => $refundAmount
+            ])
         ]);
+
+        // Envoyer email de confirmation de remboursement
+        try {
+            Mail::to($order->customer_email)->send(new \App\Mail\OrderRefunded($order));
+        } catch (\Exception $e) {
+            \Log::error('Erreur envoi email remboursement: ' . $e->getMessage());
+        }
 
         return redirect()->back()
             ->with('success', "Commande remboursée avec succès ({$refundAmount}€).");

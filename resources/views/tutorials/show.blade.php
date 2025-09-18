@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.soft-ui')
 
 @section('title', $tutorial->title . ' - Tutoriel IPTV')
 
@@ -16,8 +16,8 @@
     <div class="row">
         <div class="col-lg-8">
             <!-- Tutorial Header -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
+            <div class="card-soft mb-4">
+                <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <span class="badge bg-info fs-6">
                             <i class="bi bi-{{ $tutorial->device_type === 'android' ? 'android2' : ($tutorial->device_type === 'ios' ? 'apple' : 'display') }} me-2"></i>
@@ -43,7 +43,7 @@
                         
                         @if($tutorial->steps->count() > 0)
                             <a href="{{ route('tutorials.step', [$tutorial, $tutorial->steps->first()]) }}" 
-                               class="btn btn-primary btn-lg">
+                               class="btn btn-soft btn-soft-primary btn-lg">
                                 <i class="bi bi-play-circle me-2"></i>Commencer le tutoriel
                             </a>
                         @endif
@@ -52,11 +52,11 @@
             </div>
 
             <!-- Tutorial Steps Overview -->
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Étapes du tutoriel</h5>
+            <div class="card-soft">
+                <div class="card-header text-white" style="background: var(--gradient-info); border-radius: var(--border-radius-soft-lg) var(--border-radius-soft-lg) 0 0;">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-list-check me-2"></i>Étapes du tutoriel</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     @if($tutorial->steps->count() > 0)
                         <div class="list-group list-group-flush">
                             @foreach($tutorial->steps as $index => $step)

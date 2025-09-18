@@ -131,11 +131,11 @@
 
         /* Soft UI Navbar */
         .navbar-soft {
-            backdrop-filter: saturate(200%) blur(30px);
+             backdrop-filter: saturate(200%) blur(30px); 
             background: rgba(255, 255, 255, 0.8) !important;
             box-shadow: 0 0 1rem 0 rgba(136, 152, 170, 0.15);
-            border-radius: 0 0 var(--border-radius-soft-lg) var(--border-radius-soft-lg);
-            transition: all 0.3s ease;
+        /*             border-radius: 0 0 var(--border-radius-soft-lg) var(--border-radius-soft-lg);
+        */            transition: all 0.3s ease;
         }
 
         .navbar-soft.scrolled {
@@ -488,11 +488,11 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-soft fixed-top py-3" id="mainNavbar">
+    <nav class="navbar navbar-expand-lg navbar-soft fixed-top" id="mainNavbar">
         <div class="container">
             <!-- Brand -->
             <a class="navbar-brand navbar-brand-soft d-flex align-items-center" href="{{ route('home') }}">
-                <div class="feature-icon me-3" style="width: 3rem; height: 3rem;">
+                <div class="feature-icon me-3" style="width: 2rem; height: 2rem;">
                     <i class="bi bi-tv fs-4"></i>
                 </div>
                 {{ config('app.name', 'IPTV Pro') }}
@@ -628,7 +628,7 @@
     @endif
 
     <!-- Main Content -->
-    <main style="margin-top: 80px;">
+    <main style="margin-top: 60px;">
         @yield('content')
     </main>
 

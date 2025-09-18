@@ -27,6 +27,7 @@ Route::get('/test-modal', function() { return view('test-modal'); })->name('test
 
 // Paiements
 Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');
+Route::get('/payment/pending', [SubscriptionController::class, 'paymentPending'])->name('payment.pending');
 Route::get('/payment/cancel', [SubscriptionController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/payment/webhook', [SubscriptionController::class, 'paymentWebhook'])->name('payment.webhook');
 
@@ -43,6 +44,7 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 Route::get('/resellers', [ResellerController::class, 'index'])->name('resellers.index');
 Route::get('/resellers/checkout/{pack}', [ResellerController::class, 'checkout'])->name('resellers.checkout');
 Route::post('/resellers/checkout/{pack}', [ResellerController::class, 'processCheckout'])->name('resellers.process');
+Route::get('/resellers/payment-success/{order}', [ResellerController::class, 'paymentSuccess'])->name('resellers.payment-success');
 
 // Routes d'authentification
 require __DIR__.'/auth.php';
@@ -89,6 +91,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     // Gestion des commandes
     Route::resource('orders', App\Http\Controllers\Admin\OrderController::class);
+    Route::get('orders/{order}/debug', function(\App\Models\Order $order) {
+        return view('admin.orders.debug', compact('order'));
+    })->name('orders.debug');
     Route::post('orders/{order}/validate', [App\Http\Controllers\Admin\OrderController::class, 'validate'])->name('orders.validate');
     Route::post('orders/{order}/cancel', [App\Http\Controllers\Admin\OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('orders/{order}/refund', [App\Http\Controllers\Admin\OrderController::class, 'refund'])->name('orders.refund');
