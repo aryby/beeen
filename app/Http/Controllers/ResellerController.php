@@ -3,8 +3,215 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ResellerPack;
+use App\Models\Reseller;
+use App\Models\ResellerTransaction;
+use App\Models\Setting;
+use Illuminate\Support\Str;
 
 class ResellerController extends Controller
 {
-    //
+    /**
+     * Page publique des packs revendeur
+     */
+    public function index()
+    {
+        $packs = ResellerPack::active()
+            ->orderByCredits()
+            ->get();
+
+        return view('resellers.index', compact('packs'));
+    }
+
+    /**
+     * Page de checkout pour un pack revendeur
+     */
+    public function checkout(ResellerPack $pack)
+    {
+        if (!$pack->is_active) {
+            return redirect()->route('resellers.index')
+                ->with('error', 'Ce pack n\'est plus disponible.');
+        }
+
+        // Rediriger les visiteurs non connectés vers la page de connexion
+        if (!auth()->check()) {
+            session(['intended_checkout' => route('resellers.checkout', $pack)]);
+            return redirect()->route('login')
+                ->with('info', 'Veuillez vous connecter pour commander un pack revendeur.');
+        }
+
+        return view('resellers.checkout', compact('pack'));
+    }
+
+    /**
+     * Traitement du checkout revendeur
+     */
+    public function processCheckout(Request $request, ResellerPack $pack)
+    {
+        $validated = $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_email' => 'required|email|max:255',
+            'customer_address' => 'nullable|string|max:1000',
+            'terms_accepted' => 'required|accepted',
+            'g-recaptcha-response' => 'required',
+        ]);
+
+        // Vérifier reCAPTCHA
+        $recaptchaSecret = Setting::get('recaptcha_secret_key');
+        if ($recaptchaSecret) {
+            $recaptchaResponse = $request->input('g-recaptcha-response');
+            $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$recaptchaSecret}&response={$recaptchaResponse}");
+            $responseKeys = json_decode($response, true);
+            
+            if (!$responseKeys["success"]) {
+                return back()->withErrors(['recaptcha' => 'Veuillez vérifier le reCAPTCHA.'])->withInput();
+            }
+        }
+
+        // TODO: Intégration PayPal pour les revendeurs
+        // Pour l'instant, simulation d'un paiement réussi
+
+        // Créer ou récupérer le compte revendeur
+        $user = auth()->user();
+        if (!$user) {
+            // Si pas connecté, créer un compte temporaire ou rediriger vers inscription
+            return redirect()->route('register')
+                ->with('info', 'Veuillez créer un compte pour devenir revendeur.');
+        }
+
+        $reseller = Reseller::firstOrCreate(
+            ['user_id' => $user->id],
+            ['credits' => 0, 'total_credits_purchased' => 0, 'total_credits_used' => 0]
+        );
+
+        // Ajouter les crédits
+        $reseller->addCredits(
+            $pack->credits,
+            "Achat du pack {$pack->name}",
+            $pack->price
+        );
+
+        // Mettre à jour le rôle utilisateur
+        if ($user->role !== 'reseller') {
+            $user->update(['role' => 'reseller']);
+        }
+
+        return redirect()->route('reseller.dashboard')
+            ->with('success', "Pack {$pack->name} acheté avec succès ! Vous avez maintenant {$reseller->credits} crédits.");
+    }
+
+    /**
+     * Dashboard revendeur
+     */
+    public function dashboard()
+    {
+        $user = auth()->user();
+        $reseller = $user->reseller;
+
+        if (!$reseller) {
+            return redirect()->route('resellers.index')
+                ->with('error', 'Vous n\'êtes pas encore revendeur.');
+        }
+
+        // Statistiques
+        $stats = [
+            'total_credits' => $reseller->credits,
+            'total_purchased' => $reseller->total_credits_purchased,
+            'total_used' => $reseller->total_credits_used,
+            'codes_generated' => $reseller->transactions()->where('type', 'generate_code')->count(),
+        ];
+
+        // Transactions récentes
+        $recentTransactions = $reseller->transactions()
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        // Packs disponibles pour renouvellement
+        $availablePacks = ResellerPack::active()->get();
+
+        return view('resellers.dashboard', compact('reseller', 'stats', 'recentTransactions', 'availablePacks'));
+    }
+
+    /**
+     * Générer un code IPTV
+     */
+    public function generateCode(Request $request)
+    {
+        $validated = $request->validate([
+            'subscription_months' => 'required|integer|min:1|max:12',
+            'customer_info' => 'nullable|string|max:255',
+        ]);
+
+        $user = auth()->user();
+        $reseller = $user->reseller;
+
+        if (!$reseller || !$reseller->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Compte revendeur non actif.'
+            ], 403);
+        }
+
+        try {
+            $iptvCode = $reseller->generateIptvCode($validated['subscription_months']);
+            
+            return response()->json([
+                'success' => true,
+                'iptv_code' => $iptvCode,
+                'credits_remaining' => $reseller->credits,
+                'message' => 'Code IPTV généré avec succès !'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Historique des transactions
+     */
+    public function transactions()
+    {
+        $user = auth()->user();
+        $reseller = $user->reseller;
+
+        if (!$reseller) {
+            return redirect()->route('resellers.index');
+        }
+
+        $transactions = $reseller->transactions()
+            ->latest()
+            ->paginate(20);
+
+        return view('resellers.transactions', compact('reseller', 'transactions'));
+    }
+
+    /**
+     * Renouveler un pack
+     */
+    public function renewPack(Request $request, ResellerPack $pack)
+    {
+        $user = auth()->user();
+        $reseller = $user->reseller;
+
+        if (!$reseller) {
+            return redirect()->route('resellers.index')
+                ->with('error', 'Compte revendeur introuvable.');
+        }
+
+        // TODO: Intégration PayPal pour renouvellement
+        // Pour l'instant, simulation
+
+        $reseller->addCredits(
+            $pack->credits,
+            "Renouvellement du pack {$pack->name}",
+            $pack->price
+        );
+
+        return redirect()->route('reseller.dashboard')
+            ->with('success', "Pack renouvelé ! +{$pack->credits} crédits ajoutés.");
+    }
 }

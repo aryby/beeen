@@ -17,6 +17,15 @@ Route::get('/legal/{page}', [HomeController::class, 'legal'])->name('legal');
 Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
 Route::get('/checkout/{subscription}', [SubscriptionController::class, 'checkout'])->name('subscriptions.checkout');
 Route::post('/checkout/{subscription}', [SubscriptionController::class, 'processCheckout'])->name('subscriptions.process');
+
+// Commande rapide pour visiteurs
+Route::post('/quick-order', [App\Http\Controllers\QuickOrderController::class, 'store'])->name('quick-order.store');
+
+// Test PayPal (temporaire)
+Route::get('/test-paypal', [App\Http\Controllers\TestPayPalController::class, 'testConnection'])->name('test.paypal');
+Route::get('/test-modal', function() { return view('test-modal'); })->name('test.modal');
+
+// Paiements
 Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');
 Route::get('/payment/cancel', [SubscriptionController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/payment/webhook', [SubscriptionController::class, 'paymentWebhook'])->name('payment.webhook');
@@ -83,6 +92,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('orders/{order}/validate', [App\Http\Controllers\Admin\OrderController::class, 'validate'])->name('orders.validate');
     Route::post('orders/{order}/cancel', [App\Http\Controllers\Admin\OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('orders/{order}/refund', [App\Http\Controllers\Admin\OrderController::class, 'refund'])->name('orders.refund');
+    Route::post('orders/{order}/send-message', [App\Http\Controllers\Admin\OrderController::class, 'sendMessage'])->name('orders.send-message');
     Route::get('orders/{order}/invoice', [App\Http\Controllers\Admin\OrderController::class, 'invoice'])->name('orders.invoice');
     
     // Gestion des revendeurs

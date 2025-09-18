@@ -7,7 +7,7 @@
 <section class="iptv-hero-bg text-white position-relative overflow-hidden">
     <div class="hero-content">
         <div class="container">
-            <div class="row align-items-center min-vh-75 py-5">
+            <div class="row align-items-center min-vh-100 py-5">
                 <div class="col-lg-6">
                     <div class="animate-fade-in-up">
                         <h1 class="display-3 fw-bold mb-4">
@@ -69,7 +69,7 @@
                             <a href="{{ route('subscriptions.index') }}" class="btn btn-soft btn-soft-primary btn-lg px-4">
                                 <i class="bi bi-cart-plus me-2"></i>Commander maintenant
                             </a>
-                            <a href="{{ route('tutorials.index') }}" class="btn btn-soft-outline btn-lg px-4" style="border-color: white; color: white;">
+                            <a href="{{ route('tutorials.index') }}" class="btn btn-soft-outline btn-lg px-4">
                                 <i class="bi bi-play-circle me-2"></i>Voir les tutoriels
                             </a>
                         </div>
@@ -203,18 +203,10 @@
                                 </li>
                             </ul>
                             
-                            @auth
-                                <a href="{{ route('subscriptions.checkout', $subscription) }}" 
-                                   class="btn btn-soft btn-soft-primary w-100 mb-3">
-                                    <i class="bi bi-cart-plus me-2"></i>Commander
-                                </a>
-                            @else
-                                <button type="button" 
-                                        class="btn btn-soft btn-soft-primary w-100 mb-3"
-                                        onclick="openQuickOrderModal('subscription', {{ $subscription->id }}, '{{ $subscription->name }}', '{{ $subscription->formatted_price }}', 'Abonnement IPTV {{ $subscription->duration_text }}', '{{ $subscription->duration_text }}')">
-                                    <i class="bi bi-lightning-charge me-2"></i>Commander Rapidement
-                                </button>
-                            @endauth
+                            <a href="{{ route('subscriptions.checkout', $subscription) }}" 
+                               class="btn btn-soft btn-soft-primary w-100 mb-3">
+                                <i class="bi bi-cart-plus me-2"></i>Commander
+                            </a>
                             
                             <small class="text-muted">
                                 <i class="bi bi-shield-check me-1 text-success"></i>Paiement sécurisé
@@ -435,8 +427,101 @@
         }
     }
 
-    .min-vh-75 {
-        min-height: 75vh;
+    /* Parallax effect for hero */
+    .iptv-hero-bg {
+        background-attachment: fixed;
+        background-size: cover;
+        background-position: center;
+    }
+
+    /* Smooth entrance animations */
+    .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+
+    .animate-on-scroll.visible {
+        opacity: 1;
+        transform: translateY(0);
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    // Enhanced scroll animations
+    const animateElements = document.querySelectorAll('.card-soft, .pricing-card, .stat-card, .testimonial-soft');
+    
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 100);
+            }
+        });
+    }, observerOptions);
+
+    animateElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
+
+    // Parallax effect for floating elements
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const parallaxElements = document.querySelectorAll('[style*="animation: float"]');
+        
+        parallaxElements.forEach((el, index) => {
+            const speed = 0.5 + (index * 0.1);
+            el.style.transform = `translateY(${scrolled * speed}px)`;
+        });
+    });
+
+    // Counter animation
+    function animateCounter(element, target, duration = 2000) {
+        let start = 0;
+        const increment = target / (duration / 16);
+        
+        const timer = setInterval(() => {
+            start += increment;
+            element.textContent = Math.floor(start).toLocaleString() + '+';
+            
+            if (start >= target) {
+                element.textContent = target.toLocaleString() + '+';
+                clearInterval(timer);
+            }
+        }, 16);
+    }
+
+    // Trigger counters when stats section is visible
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const counters = entry.target.querySelectorAll('.fw-bold');
+                counters.forEach(counter => {
+                    const text = counter.textContent;
+                    const number = parseInt(text.replace(/[^0-9]/g, ''));
+                    if (number > 0) {
+                        animateCounter(counter, number);
+                    }
+                });
+                statsObserver.unobserve(entry.target);
+            }
+        });
+    });
+
+    document.querySelectorAll('.stat-card').forEach(card => {
+        statsObserver.observe(card);
+    });
+</script>
 @endpush

@@ -280,7 +280,7 @@
                     <span class="badge bg-warning ms-auto">{{ App\Models\Message::unread()->count() }}</span>
                 @endif
             </a>
-            <a href="{{ route('admin.testimonials.index') }}" class="nav-link {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }}">
+            <a href="#" class="nav-link">
                 <i class="bi bi-chat-quote"></i>
                 Témoignages
             </a>
@@ -292,11 +292,11 @@
             </a>
             
             <div class="nav-section">Outils</div>
-            <a href="{{ route('admin.export.orders') }}" class="nav-link">
+            <a href="#" class="nav-link">
                 <i class="bi bi-download"></i>
                 Export commandes
             </a>
-            <a href="{{ route('admin.export.resellers') }}" class="nav-link">
+            <a href="#" class="nav-link">
                 <i class="bi bi-download"></i>
                 Export revendeurs
             </a>

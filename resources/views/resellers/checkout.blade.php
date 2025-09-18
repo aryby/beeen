@@ -1,24 +1,26 @@
 @extends('layouts.soft-ui')
 
-@section('title', 'Commande - ' . $subscription->name)
+@section('title', 'Commande Pack Revendeur - ' . $pack->name)
 
 @section('content')
 <!-- Hero Section -->
-<section class="position-relative overflow-hidden py-5" style="background: var(--gradient-primary);">
+<section class="position-relative overflow-hidden py-5" style="background: var(--gradient-success);">
     <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10">
         <svg width="100%" height="100%" viewBox="0 0 1000 1000">
             <defs>
-                <pattern id="checkout-pattern" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
-                    <circle cx="25" cy="25" r="2" fill="rgba(255,255,255,0.3)"/>
+                <pattern id="reseller-checkout-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                    <circle cx="40" cy="40" r="2" fill="white"/>
+                    <circle cx="20" cy="60" r="1" fill="white" opacity="0.6"/>
+                    <circle cx="60" cy="20" r="1.5" fill="white" opacity="0.8"/>
                 </pattern>
             </defs>
-            <rect width="1000" height="1000" fill="url(#checkout-pattern)"/>
+            <rect width="1000" height="1000" fill="url(#reseller-checkout-pattern)"/>
         </svg>
     </div>
     <div class="container position-relative">
         <div class="text-center text-white">
-            <h1 class="display-5 fw-bold mb-3">Finaliser votre commande</h1>
-            <p class="lead opacity-75">Quelques informations et votre abonnement sera activé immédiatement</p>
+            <h1 class="display-5 fw-bold mb-3">Commande Pack Revendeur</h1>
+            <p class="lead opacity-75">Rejoignez notre réseau de revendeurs et commencez à générer des revenus</p>
         </div>
     </div>
 </section>
@@ -30,52 +32,45 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none">Accueil</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('subscriptions.index') }}" class="text-decoration-none">Abonnements</a></li>
-                    <li class="breadcrumb-item active">Commande</li>
+                    <li class="breadcrumb-item"><a href="{{ route('resellers.index') }}" class="text-decoration-none">Revendeurs</a></li>
+                    <li class="breadcrumb-item active">Commande Pack</li>
                 </ol>
             </nav>
             
             <div class="row">
-                <!-- Formulaire de commande -->
+                <!-- Formulaire -->
                 <div class="col-lg-8">
                     <div class="card-soft">
-                        <div class="card-header text-white position-relative overflow-hidden" style="background: var(--gradient-primary); border-radius: var(--border-radius-soft-lg) var(--border-radius-soft-lg) 0 0;">
-                            <div class="position-absolute top-0 start-0 w-100 h-100 opacity-20">
-                                <svg width="100%" height="100%" viewBox="0 0 100 100">
-                                    <circle cx="20" cy="20" r="2" fill="white" opacity="0.3"/>
-                                    <circle cx="80" cy="40" r="1.5" fill="white" opacity="0.4"/>
-                                    <circle cx="60" cy="80" r="1" fill="white" opacity="0.5"/>
-                                </svg>
-                            </div>
+                        <div class="card-header text-white position-relative overflow-hidden" style="background: var(--gradient-success); border-radius: var(--border-radius-soft-lg) var(--border-radius-soft-lg) 0 0;">
                             <div class="position-relative">
                                 <h4 class="mb-0 fw-bold">
-                                    <i class="bi bi-cart-check me-2"></i>Informations de commande
+                                    <i class="bi bi-cart-check me-2"></i>Finaliser votre commande revendeur
                                 </h4>
-                                <small class="opacity-75">Sécurisé par cryptage SSL 256 bits</small>
+                                <small class="opacity-75">Devenez revendeur IPTV en quelques clics</small>
                             </div>
                         </div>
                         <div class="card-body p-4">
-                            <form method="POST" action="{{ route('subscriptions.process', $subscription) }}">
+                            <form method="POST" action="{{ route('resellers.process', $pack) }}">
                                 @csrf
                                 
-                                <!-- Informations client -->
+                                <!-- Informations revendeur -->
                                 <div class="mb-4">
                                     <h5 class="fw-bold mb-3 d-flex align-items-center">
                                         <div class="feature-icon me-3" style="width: 2.5rem; height: 2.5rem;">
-                                            <i class="bi bi-person"></i>
+                                            <i class="bi bi-person-badge"></i>
                                         </div>
-                                        Vos informations
+                                        Informations revendeur
                                     </h5>
                                     
                                     <div class="row">
                                         <div class="col-md-12 mb-3">
-                                            <label for="customer_name" class="form-label fw-bold">Nom complet *</label>
+                                            <label for="customer_name" class="form-label fw-bold">Nom / Raison sociale *</label>
                                             <input type="text" 
                                                    class="form-control form-control-soft @error('customer_name') is-invalid @enderror" 
                                                    id="customer_name" 
                                                    name="customer_name" 
                                                    value="{{ old('customer_name', auth()->user()->name ?? '') }}" 
-                                                   placeholder="Votre nom complet"
+                                                   placeholder="Votre nom ou raison sociale"
                                                    required>
                                             @error('customer_name')
                                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -85,17 +80,17 @@
                                     
                                     <div class="row">
                                         <div class="col-md-12 mb-3">
-                                            <label for="customer_email" class="form-label fw-bold">Adresse email *</label>
+                                            <label for="customer_email" class="form-label fw-bold">Adresse email professionnelle *</label>
                                             <div class="input-group input-group-soft">
                                                 <span class="input-group-text">
-                                                    <i class="bi bi-envelope text-primary"></i>
+                                                    <i class="bi bi-envelope text-success"></i>
                                                 </span>
                                                 <input type="email" 
                                                        class="form-control form-control-soft @error('customer_email') is-invalid @enderror" 
                                                        id="customer_email" 
                                                        name="customer_email" 
                                                        value="{{ old('customer_email', auth()->user()->email ?? '') }}" 
-                                                       placeholder="votre@email.com"
+                                                       placeholder="votre@entreprise.com"
                                                        required>
                                             </div>
                                             @error('customer_email')
@@ -103,19 +98,19 @@
                                             @enderror
                                             <div class="form-text d-flex align-items-center mt-2">
                                                 <i class="bi bi-info-circle me-2 text-info"></i>
-                                                Vos identifiants IPTV seront envoyés à cette adresse
+                                                Vos accès revendeur seront envoyés à cette adresse
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div class="row">
                                         <div class="col-md-12 mb-3">
-                                            <label for="customer_address" class="form-label fw-bold">Adresse (optionnel)</label>
+                                            <label for="customer_address" class="form-label fw-bold">Adresse professionnelle</label>
                                             <textarea class="form-control form-control-soft @error('customer_address') is-invalid @enderror" 
                                                       id="customer_address" 
                                                       name="customer_address" 
                                                       rows="3"
-                                                      placeholder="Votre adresse complète (optionnel)">{{ old('customer_address') }}</textarea>
+                                                      placeholder="Adresse de votre entreprise (optionnel)">{{ old('customer_address') }}</textarea>
                                             @error('customer_address')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -129,7 +124,7 @@
                                         <div class="feature-icon success me-3" style="width: 2.5rem; height: 2.5rem;">
                                             <i class="bi bi-shield-check"></i>
                                         </div>
-                                        Conditions et sécurité
+                                        Conditions revendeur
                                     </h5>
                                     
                                     <div class="card-soft p-3 mb-3" style="background: rgba(130, 214, 22, 0.1);">
@@ -142,7 +137,7 @@
                                                    {{ old('terms_accepted') ? 'checked' : '' }} 
                                                    required>
                                             <label class="form-check-label fw-bold" for="terms_accepted">
-                                                J'accepte les <a href="{{ route('legal', 'terms') }}" target="_blank" class="text-decoration-none">conditions générales de vente</a> *
+                                                J'accepte les <a href="{{ route('legal', 'terms') }}" target="_blank" class="text-decoration-none">conditions générales revendeur</a> *
                                             </label>
                                             @error('terms_accepted')
                                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -163,9 +158,9 @@
                                 
                                 <!-- Bouton de paiement -->
                                 <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-soft btn-soft-primary btn-lg py-3">
+                                    <button type="submit" class="btn btn-soft btn-soft-success btn-lg py-3">
                                         <i class="bi bi-credit-card me-2"></i>
-                                        Payer avec PayPal - {{ $subscription->formatted_price }}
+                                        Payer avec PayPal - {{ $pack->formatted_price }}
                                     </button>
                                 </div>
                                 
@@ -180,123 +175,112 @@
                     </div>
                 </div>
                 
-                <!-- Récapitulatif de commande -->
+                <!-- Récapitulatif Pack -->
                 <div class="col-lg-4">
                     <div class="card-soft sticky-top" style="top: 100px;">
                         <div class="card-header text-white" style="background: var(--gradient-success); border-radius: var(--border-radius-soft-lg) var(--border-radius-soft-lg) 0 0;">
                             <h5 class="mb-0 fw-bold">
-                                <i class="bi bi-receipt me-2"></i>Récapitulatif
+                                <i class="bi bi-package me-2"></i>Votre Pack Revendeur
                             </h5>
                         </div>
                         <div class="card-body p-4">
-                            <!-- Subscription Details -->
-                            <div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded" style="background: rgba(203, 12, 159, 0.1);">
-                                <div>
-                                    <h6 class="mb-1 fw-bold">{{ $subscription->name }}</h6>
-                                    <small class="text-muted">{{ $subscription->duration_text }}</small>
+                            <!-- Pack Details -->
+                            <div class="text-center mb-4 p-3 rounded" style="background: rgba(130, 214, 22, 0.1);">
+                                <h4 class="fw-bold mb-2" style="color: var(--soft-dark);">{{ $pack->name }}</h4>
+                                <div class="display-5 fw-bold mb-2" style="background: var(--gradient-success); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                                    {{ $pack->credits }}
                                 </div>
-                                <div class="text-end">
-                                    <div class="fw-bold fs-5" style="color: var(--soft-primary);">{{ $subscription->formatted_price }}</div>
-                                    @if($subscription->duration_months > 1)
-                                        <small class="text-success">
-                                            {{ number_format($subscription->price / $subscription->duration_months, 2) }}€/mois
-                                        </small>
-                                    @endif
-                                </div>
+                                <small class="text-muted">crédits IPTV</small>
                             </div>
                             
-                            <!-- Features Included -->
+                            <!-- Pricing -->
+                            <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded" style="background: rgba(23, 193, 232, 0.1);">
+                                <span class="fw-bold">Prix du pack</span>
+                                <span class="fw-bold fs-5" style="color: var(--soft-success);">{{ $pack->formatted_price }}</span>
+                            </div>
+                            
+                            <div class="alert alert-soft alert-info small mb-4">
+                                <i class="bi bi-calculator me-1"></i>
+                                <strong>Prix par crédit :</strong> {{ $pack->formatted_price_per_credit }}
+                            </div>
+                            
+                            <!-- What's included -->
                             <div class="mb-4">
-                                <h6 class="fw-bold mb-3 d-flex align-items-center">
-                                    <i class="bi bi-star text-warning me-2"></i>
-                                    Inclus dans votre abonnement
+                                <h6 class="fw-bold mb-3">Inclus dans votre pack :</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2 d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <span>{{ $pack->credits }} codes IPTV à générer</span>
+                                    </li>
+                                    <li class="mb-2 d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <span>Tableau de bord revendeur</span>
+                                    </li>
+                                    <li class="mb-2 d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <span>Génération instantanée</span>
+                                    </li>
+                                    <li class="mb-2 d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <span>Historique complet</span>
+                                    </li>
+                                    <li class="mb-2 d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <span>Support revendeur 24/7</span>
+                                    </li>
+                                    <li class="mb-2 d-flex align-items-center">
+                                        <i class="bi bi-check-circle text-success me-2"></i>
+                                        <span>Formation gratuite</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Business Calculator -->
+                            <div class="card-soft p-3" style="background: rgba(251, 207, 51, 0.1);">
+                                <h6 class="fw-bold mb-2">
+                                    <i class="bi bi-calculator text-warning me-2"></i>Calculateur de revenus
                                 </h6>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>1000+ chaînes HD/4K</small>
-                                        </div>
+                                <div class="small">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Prix d'achat :</span>
+                                        <strong>{{ $pack->formatted_price }}</strong>
                                     </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>VOD illimité</small>
-                                        </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Prix de revente suggéré :</span>
+                                        <strong class="text-success">{{ number_format($pack->price * 1.5, 2) }}€</strong>
                                     </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>Sans publicité</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>Support 24/7</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>Multi-appareils</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center">
-                                            <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>Activation immédiate</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="my-4">
-                            
-                            <!-- Total -->
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <span class="fw-bold fs-5">Total</span>
-                                <span class="fw-bold fs-4" style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                                    {{ $subscription->formatted_price }}
-                                </span>
-                            </div>
-                            
-                            <!-- Guarantees -->
-                            <div class="alert alert-soft alert-info">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-lightning-charge text-info me-2 fs-4"></i>
-                                    <div>
-                                        <strong>Activation immédiate</strong><br>
-                                        <small>Identifiants IPTV envoyés par email dans les minutes suivant votre paiement</small>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Bénéfice potentiel :</span>
+                                        <strong class="text-warning">+{{ number_format($pack->price * 0.5, 2) }}€</strong>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Security Badges -->
+                    <!-- Support Info -->
                     <div class="card-soft mt-4">
                         <div class="card-body text-center p-4">
-                            <h6 class="fw-bold mb-3">Nos garanties</h6>
+                            <h6 class="fw-bold mb-3">Support Revendeur</h6>
                             
                             <div class="row text-center">
                                 <div class="col-4">
                                     <div class="feature-icon success mx-auto mb-2" style="width: 3rem; height: 3rem;">
-                                        <i class="bi bi-shield-check"></i>
-                                    </div>
-                                    <small class="fw-bold">100% Légal</small>
-                                </div>
-                                <div class="col-4">
-                                    <div class="feature-icon mx-auto mb-2" style="width: 3rem; height: 3rem;">
-                                        <i class="bi bi-arrow-repeat"></i>
-                                    </div>
-                                    <small class="fw-bold">Satisfait ou remboursé</small>
-                                </div>
-                                <div class="col-4">
-                                    <div class="feature-icon info mx-auto mb-2" style="width: 3rem; height: 3rem;">
                                         <i class="bi bi-headset"></i>
                                     </div>
                                     <small class="fw-bold">Support 24/7</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="feature-icon mx-auto mb-2" style="width: 3rem; height: 3rem;">
+                                        <i class="bi bi-book"></i>
+                                    </div>
+                                    <small class="fw-bold">Formation incluse</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="feature-icon info mx-auto mb-2" style="width: 3rem; height: 3rem;">
+                                        <i class="bi bi-graph-up"></i>
+                                    </div>
+                                    <small class="fw-bold">Suivi des ventes</small>
                                 </div>
                             </div>
                         </div>
@@ -318,45 +302,28 @@
         const form = document.querySelector('form');
         const submitBtn = form.querySelector('button[type="submit"]');
         
-        // Enhanced form validation with Soft UI feedback
+        // Enhanced form validation
         form.addEventListener('submit', function(e) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Traitement sécurisé en cours...';
+            submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Traitement de votre commande...';
             submitBtn.style.background = 'var(--gradient-warning)';
         });
         
-        // Real-time validation with Soft UI styling
+        // Real-time validation
         const requiredFields = form.querySelectorAll('input[required], textarea[required]');
         requiredFields.forEach(field => {
             field.addEventListener('blur', function() {
                 if (this.value.trim() === '') {
-                    this.classList.add('is-invalid');
                     this.style.borderColor = 'var(--soft-danger)';
+                    this.style.boxShadow = '0 0 0 2px rgba(234, 6, 6, 0.25)';
                 } else {
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
                     this.style.borderColor = 'var(--soft-success)';
+                    this.style.boxShadow = '0 0 0 2px rgba(130, 214, 22, 0.25)';
                 }
             });
         });
-        
-        // Email validation with enhanced feedback
-        const emailField = document.getElementById('customer_email');
-        emailField.addEventListener('blur', function() {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(this.value)) {
-                this.classList.add('is-invalid');
-                this.style.borderColor = 'var(--soft-danger)';
-                this.style.boxShadow = '0 0 0 2px rgba(234, 6, 6, 0.25)';
-            } else {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-                this.style.borderColor = 'var(--soft-success)';
-                this.style.boxShadow = '0 0 0 2px rgba(130, 214, 22, 0.25)';
-            }
-        });
 
-        // Animate elements on load
+        // Animate cards on load
         const cards = document.querySelectorAll('.card-soft');
         cards.forEach((card, index) => {
             card.style.opacity = '0';

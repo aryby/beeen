@@ -24,6 +24,13 @@ class Order extends Model
         'status',
         'iptv_code',
         'expires_at',
+        'item_type',
+        'item_id',
+        'payment_details',
+        'is_guest_order',
+        'refund_amount',
+        'refund_reason',
+        'refunded_at',
     ];
 
     protected function casts(): array
@@ -31,6 +38,10 @@ class Order extends Model
         return [
             'amount' => 'decimal:2',
             'expires_at' => 'datetime',
+            'payment_details' => 'array',
+            'is_guest_order' => 'boolean',
+            'refund_amount' => 'decimal:2',
+            'refunded_at' => 'datetime',
         ];
     }
 
@@ -56,6 +67,11 @@ class Order extends Model
     public function subscription()
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    public function resellerPack()
+    {
+        return $this->belongsTo(ResellerPack::class, 'item_id');
     }
 
     /**

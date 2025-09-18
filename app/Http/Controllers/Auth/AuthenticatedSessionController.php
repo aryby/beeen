@@ -28,6 +28,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Vérifier s'il y a une redirection prévue après connexion
+        $intendedUrl = session('intended_checkout');
+        if ($intendedUrl) {
+            session()->forget('intended_checkout');
+            return redirect($intendedUrl);
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

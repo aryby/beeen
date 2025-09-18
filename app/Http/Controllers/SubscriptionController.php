@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Subscription;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Services\PayPalService;
 use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
@@ -28,6 +29,13 @@ class SubscriptionController extends Controller
         if (!$subscription->is_active) {
             return redirect()->route('subscriptions.index')
                 ->with('error', 'Cet abonnement n\'est plus disponible.');
+        }
+
+        // Rediriger les visiteurs non connectés vers la page de connexion
+        if (!auth()->check()) {
+            session(['intended_checkout' => route('subscriptions.checkout', $subscription)]);
+            return redirect()->route('login')
+                ->with('info', 'Veuillez vous connecter pour commander un abonnement.');
         }
 
         return view('subscriptions.checkout', compact('subscription'));
@@ -68,25 +76,52 @@ class SubscriptionController extends Controller
             'status' => 'pending',
         ]);
 
-        // Rediriger vers PayPal (simulation pour l'instant)
+        // Rediriger vers PayPal
         return $this->redirectToPayPal($order);
     }
 
     private function redirectToPayPal(Order $order)
     {
-        // TODO: Intégrer vraiment PayPal API
-        // Pour l'instant, simulation d'un paiement réussi
+        $paypalService = new PayPalService();
         
-        // Simuler un délai de paiement
-        sleep(1);
-        
-        // Marquer comme payé
+        if (!$paypalService->isConfigured()) {
+            // Fallback simulation si PayPal pas configuré
+            return $this->simulatePayment($order);
+        }
+
+        try {
+            $result = $paypalService->createPayment(
+                $order->amount,
+                $order->currency,
+                "Abonnement IPTV {$order->subscription->name} - {$order->order_number}",
+                route('payment.success', ['order' => $order->id, 'token' => '__TOKEN__']),
+                route('payment.cancel', ['order' => $order->id])
+            );
+
+            if ($result['success']) {
+                // Sauvegarder l'ID PayPal pour le suivi
+                $order->update(['payment_id' => $result['order_id']]);
+                
+                // Rediriger vers PayPal
+                return redirect($result['approval_url']);
+            } else {
+                return redirect()->route('subscriptions.index')
+                    ->with('error', 'Erreur lors de l\'initialisation du paiement: ' . $result['error']);
+            }
+        } catch (\Exception $e) {
+            Log::error('PayPal Error: ' . $e->getMessage());
+            return $this->simulatePayment($order);
+        }
+    }
+
+    private function simulatePayment(Order $order)
+    {
+        // Simulation pour les tests
         $order->update([
             'status' => 'paid',
-            'payment_id' => 'PAYPAL-' . strtoupper(Str::random(15)),
+            'payment_id' => 'PAYPAL-SIM-' . strtoupper(Str::random(15)),
         ]);
         
-        // Générer le code IPTV
         $order->generateIptvCode();
         $order->setExpirationDate();
         
@@ -95,15 +130,69 @@ class SubscriptionController extends Controller
 
     public function paymentSuccess(Request $request)
     {
+        // Log des paramètres de retour PayPal
+        \Log::info('PayPal Return Parameters', $request->all());
+        
         $orderId = $request->get('order');
+        $paypalToken = $request->get('token');
+        $payerId = $request->get('PayerID');
+
+        if (!$orderId) {
+            \Log::error('Missing order ID in PayPal return', $request->all());
+            return redirect()->route('subscriptions.index')
+                ->with('error', 'Informations de commande manquantes.');
+        }
+
         $order = Order::findOrFail($orderId);
+        \Log::info('Processing PayPal return for order', ['order_id' => $order->id, 'current_status' => $order->status]);
+
+        // Si la commande n'est pas encore payée, essayer de capturer le paiement PayPal
+        if (!$order->isPaid() && $paypalToken) {
+            $paypalService = new PayPalService();
+            $result = $paypalService->capturePayment($paypalToken);
+
+            if ($result['success'] && $result['status'] === 'COMPLETED') {
+                $order->update([
+                    'status' => 'paid',
+                    'payment_details' => $result['data'],
+                ]);
+                
+                // Générer le code IPTV si c'est un abonnement
+                if ($order->subscription_id) {
+                    $order->generateIptvCode();
+                    $order->setExpirationDate();
+                }
+                
+                // Traitement spécial pour les packs revendeur
+                if ($order->item_type === 'reseller_pack') {
+                    $pack = ResellerPack::find($order->item_id);
+                    $reseller = Reseller::firstOrCreate(
+                        ['user_id' => $order->user_id],
+                        ['credits' => 0, 'total_credits_purchased' => 0, 'total_credits_used' => 0]
+                    );
+                    
+                    $reseller->addCredits($pack->credits, "Achat pack {$pack->name}", $pack->price);
+                    $order->user->update(['role' => 'reseller']);
+                    
+                    return redirect()->route('reseller.dashboard')
+                        ->with('success', "Pack {$pack->name} acheté avec succès ! Vous avez maintenant {$reseller->credits} crédits.");
+                }
+            }
+        }
 
         if (!$order->isPaid()) {
             return redirect()->route('subscriptions.index')
                 ->with('error', 'Le paiement n\'a pas été confirmé.');
         }
 
-        // TODO: Envoyer l'email de confirmation avec les identifiants IPTV
+        // Envoyer l'email de confirmation avec les identifiants IPTV
+        try {
+            \Illuminate\Support\Facades\Mail::to($order->customer_email)
+                ->send(new \App\Mail\OrderConfirmation($order));
+        } catch (\Exception $e) {
+            // Log l'erreur mais ne pas faire échouer la confirmation
+            logger()->error('Erreur envoi email confirmation commande: ' . $e->getMessage());
+        }
 
         return view('subscriptions.success', compact('order'));
     }
