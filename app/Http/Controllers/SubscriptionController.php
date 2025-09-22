@@ -6,7 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Subscription;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Models\ResellerPack;
+use App\Models\Reseller;
 use App\Services\PayPalService;
+use App\Services\DynamicConfigService;
+use App\Services\DynamicMailService;
 use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 
@@ -84,6 +88,9 @@ class SubscriptionController extends Controller
 
     private function redirectToPayPal(Order $order)
     {
+        // Configurer dynamiquement SMTP et PayPal
+        DynamicConfigService::configureAll();
+        
         $paypalService = new PayPalService();
         
         if (!$paypalService->isConfigured()) {
@@ -132,6 +139,9 @@ class SubscriptionController extends Controller
 
     public function paymentSuccess(Request $request)
     {
+        // Configurer dynamiquement SMTP et PayPal
+        DynamicConfigService::configureAll();
+        
         // Log des paramètres de retour PayPal
         \Log::info('PayPal Return Parameters', $request->all());
         
@@ -179,6 +189,22 @@ class SubscriptionController extends Controller
                     $reseller->addCredits($pack->credits, "Achat pack {$pack->name}", $pack->price);
                     $order->user->update(['role' => 'reseller']);
                     
+                    // Envoyer email de confirmation pour pack revendeur
+                    try {
+                        $mailSent = DynamicMailService::send(
+                            $order->customer_email,
+                            new \App\Mail\OrderConfirmation($order)
+                        );
+                        
+                        if ($mailSent) {
+                            \Log::info('Reseller pack confirmation email sent successfully for order: ' . $order->id);
+                        } else {
+                            \Log::warning('Failed to send reseller pack confirmation email for order: ' . $order->id);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Erreur envoi email confirmation pack revendeur: ' . $e->getMessage());
+                    }
+                    
                     return redirect()->route('reseller.dashboard')
                         ->with('success', "Pack {$pack->name} acheté avec succès ! Vous avez maintenant {$reseller->credits} crédits.");
                 }
@@ -190,13 +216,22 @@ class SubscriptionController extends Controller
                 ->with('error', 'Le paiement n\'a pas été confirmé.');
         }
 
-        // Envoyer l'email de confirmation avec les identifiants IPTV
-        try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email)
-                ->send(new \App\Mail\OrderConfirmation($order));
-        } catch (\Exception $e) {
-            // Log l'erreur mais ne pas faire échouer la confirmation
-            logger()->error('Erreur envoi email confirmation commande: ' . $e->getMessage());
+        // Envoyer l'email de confirmation avec les identifiants IPTV (pour abonnements normaux)
+        if ($order->subscription_id) {
+            try {
+                $mailSent = DynamicMailService::send(
+                    $order->customer_email,
+                    new \App\Mail\OrderConfirmation($order)
+                );
+                
+                if ($mailSent) {
+                    \Log::info('Subscription confirmation email sent successfully for order: ' . $order->id);
+                } else {
+                    \Log::warning('Failed to send subscription confirmation email for order: ' . $order->id);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Erreur envoi email confirmation abonnement: ' . $e->getMessage());
+            }
         }
 
         return view('subscriptions.success', compact('order'));
