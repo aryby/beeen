@@ -110,7 +110,7 @@
                         </form>
 
                         <!-- Demo Accounts -->
-                        <div class="alert alert-soft alert-info">
+                        {{-- div class="alert alert-soft alert-info">
                             <h6 class="fw-bold mb-2">
                                 <i class="bi bi-info-circle me-2"></i>Comptes de démonstration
                             </h6>
@@ -119,7 +119,7 @@
                                 Email: <code>admin@iptv.com</code><br>
                                 Mot de passe: <code>admin123</code>
                             </div>
-                        </div>
+                        </div> --}}
 
                         <!-- Footer Links -->
                         <div class="text-center mt-4 pt-3 border-top">
