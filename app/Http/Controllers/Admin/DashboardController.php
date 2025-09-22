@@ -46,7 +46,7 @@ class DashboardController extends Controller
         }
 
         // Commandes récentes
-        $recentOrders = Order::with(['user', 'subscription'])
+        $recentOrders = Order::with(['user', 'subscription', 'resellerPack'])
             ->latest()
             ->limit(10)
             ->get();

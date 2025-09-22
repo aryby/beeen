@@ -23,7 +23,11 @@ Route::post('/quick-order', [App\Http\Controllers\QuickOrderController::class, '
 
 // Test PayPal (temporaire)
 Route::get('/test-paypal', [App\Http\Controllers\TestPayPalController::class, 'testConnection'])->name('test.paypal');
+Route::get('/test-paypal-page', [App\Http\Controllers\TestPayPalController::class, 'testPage'])->name('test.paypal.page');
 Route::get('/test-modal', function() { return view('test-modal'); })->name('test.modal');
+Route::get('/test-success', function() { return 'Test Success'; });
+Route::get('/test-cancel', function() { return 'Test Cancel'; });
+
 
 // Paiements
 Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess'])->name('payment.success');
@@ -99,21 +103,39 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('orders/{order}/refund', [App\Http\Controllers\Admin\OrderController::class, 'refund'])->name('orders.refund');
     Route::post('orders/{order}/send-message', [App\Http\Controllers\Admin\OrderController::class, 'sendMessage'])->name('orders.send-message');
     Route::get('orders/{order}/invoice', [App\Http\Controllers\Admin\OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::post('orders/{order}/generate-m3u', [App\Http\Controllers\Admin\OrderController::class, 'generateM3U'])->name('orders.generate-m3u');
+    Route::post('orders/{order}/extract-m3u', [App\Http\Controllers\Admin\OrderController::class, 'extractM3U'])->name('orders.extract-m3u');
+    Route::post('orders/{order}/extract-m3u-from-url', [App\Http\Controllers\Admin\OrderController::class, 'extractM3UFromUrl'])->name('orders.extract-m3u-from-url');
+    Route::post('orders/{order}/update-m3u', [App\Http\Controllers\Admin\OrderController::class, 'updateM3U'])->name('orders.update-m3u');
+    Route::delete('orders/{order}/delete-m3u', [App\Http\Controllers\Admin\OrderController::class, 'deleteM3U'])->name('orders.delete-m3u');
+    Route::get('orders/{order}/test-m3u', [App\Http\Controllers\Admin\OrderController::class, 'testM3UConnection'])->name('orders.test-m3u');
     
     // Gestion des revendeurs
-    Route::resource('resellers', App\Http\Controllers\Admin\ResellerController::class);
+    Route::resource('resellers', App\Http\Controllers\Admin\ResellerController::class)->only(['index']);
+    Route::get('resellers/order/{order}', [App\Http\Controllers\Admin\ResellerController::class, 'showOrder'])->name('resellers.show-order');
+    Route::get('resellers/client/{reseller}', [App\Http\Controllers\Admin\ResellerController::class, 'showReseller'])->name('resellers.show-reseller');
+    Route::post('resellers/order/{order}/validate', [App\Http\Controllers\Admin\ResellerController::class, 'validateOrder'])->name('resellers.validate-order');
+    Route::post('resellers/order/{order}/cancel', [App\Http\Controllers\Admin\ResellerController::class, 'cancelOrder'])->name('resellers.cancel-order');
+    Route::post('resellers/order/{order}/refund', [App\Http\Controllers\Admin\ResellerController::class, 'refundOrder'])->name('resellers.refund-order');
     Route::post('resellers/{reseller}/toggle-status', [App\Http\Controllers\Admin\ResellerController::class, 'toggleStatus'])->name('resellers.toggle-status');
     Route::post('resellers/{reseller}/add-credits', [App\Http\Controllers\Admin\ResellerController::class, 'addCredits'])->name('resellers.add-credits');
+    Route::post('resellers/{reseller}/remove-credits', [App\Http\Controllers\Admin\ResellerController::class, 'removeCredits'])->name('resellers.remove-credits');
+    Route::get('resellers/export/orders', [App\Http\Controllers\Admin\ResellerController::class, 'exportOrders'])->name('resellers.export-orders');
+    Route::get('resellers/export/resellers', [App\Http\Controllers\Admin\ResellerController::class, 'exportResellers'])->name('resellers.export-resellers');
     
     // Gestion des tutoriels
     Route::resource('tutorials', App\Http\Controllers\Admin\TutorialController::class);
     Route::post('tutorials/{tutorial}/toggle-status', [App\Http\Controllers\Admin\TutorialController::class, 'toggleStatus'])->name('tutorials.toggle-status');
-    Route::resource('tutorials.steps', App\Http\Controllers\Admin\TutorialStepController::class)->except(['index', 'show']);
+    Route::post('tutorials/{tutorial}/duplicate', [App\Http\Controllers\Admin\TutorialController::class, 'duplicate'])->name('tutorials.duplicate');
+    Route::post('tutorials/reorder', [App\Http\Controllers\Admin\TutorialController::class, 'reorder'])->name('tutorials.reorder');
+    Route::resource('tutorials.steps', App\Http\Controllers\Admin\TutorialStepController::class)->except(['index', 'show', 'create']);
+    Route::post('tutorials/{tutorial}/steps/reorder', [App\Http\Controllers\Admin\TutorialStepController::class, 'reorder'])->name('tutorials.steps.reorder');
     
     // Gestion des messages
     Route::resource('messages', App\Http\Controllers\Admin\MessageController::class);
     Route::post('messages/{message}/reply', [App\Http\Controllers\Admin\MessageController::class, 'reply'])->name('messages.reply');
     Route::post('messages/{message}/status', [App\Http\Controllers\Admin\MessageController::class, 'updateStatus'])->name('messages.status');
+    Route::get('messages/{message}', [App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
     
     // Gestion des témoignages
     Route::resource('testimonials', App\Http\Controllers\Admin\TestimonialController::class);

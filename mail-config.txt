@@ -1,0 +1,21 @@
+# Configuration SMTP pour l'envoi d'emails
+# Remplacez les valeurs par vos vraies informations
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your-email@gmail.com
+MAIL_FROM_NAME="Beeen IPTV"
+
+# Alternative avec Mailtrap (pour les tests)
+# MAIL_MAILER=smtp
+# MAIL_HOST=sandbox.smtp.mailtrap.io
+# MAIL_PORT=2525
+# MAIL_USERNAME=your-mailtrap-username
+# MAIL_PASSWORD=your-mailtrap-password
+# MAIL_ENCRYPTION=tls
+# MAIL_FROM_ADDRESS=test@beeen.com
+# MAIL_FROM_NAME="Beeen IPTV"

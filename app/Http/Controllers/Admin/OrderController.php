@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Subscription;
 use App\Services\PayPalService;
+use App\Services\M3UExtractorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -22,7 +23,9 @@ class OrderController extends Controller
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
 
+        // Filtrer uniquement les commandes d'abonnements (pas les commandes de revendeurs)
         $orders = Order::with(['user', 'subscription'])
+            ->where('item_type', 'subscription')
             ->when($status, function ($query, $status) {
                 return $query->byStatus($status);
             })
@@ -40,14 +43,17 @@ class OrderController extends Controller
             ->latest()
             ->paginate(20);
 
+        // Statistiques uniquement pour les commandes d'abonnements
+        $subscriptionOrdersQuery = Order::where('item_type', 'subscription');
+        
         $stats = [
-            'total' => Order::count(),
-            'paid' => Order::paid()->count(),
-            'pending' => Order::pending()->count(),
-            'cancelled' => Order::where('status', 'cancelled')->count(),
-            'refunded' => Order::where('status', 'refunded')->count(),
-            'total_revenue' => Order::paid()->sum('amount'),
-            'pending_revenue' => Order::pending()->sum('amount'),
+            'total' => $subscriptionOrdersQuery->count(),
+            'paid' => $subscriptionOrdersQuery->clone()->paid()->count(),
+            'pending' => $subscriptionOrdersQuery->clone()->pending()->count(),
+            'cancelled' => $subscriptionOrdersQuery->clone()->where('status', 'cancelled')->count(),
+            'refunded' => $subscriptionOrdersQuery->clone()->where('status', 'refunded')->count(),
+            'total_revenue' => $subscriptionOrdersQuery->clone()->paid()->sum('amount'),
+            'pending_revenue' => $subscriptionOrdersQuery->clone()->pending()->sum('amount'),
         ];
 
         return view('admin.orders.index', compact('orders', 'stats', 'status', 'search', 'dateFrom', 'dateTo'));
@@ -61,19 +67,8 @@ class OrderController extends Controller
         try {
             $order->load(['user', 'subscription', 'resellerPack']);
             
-            // Récupérer les détails PayPal si disponible (de manière asynchrone pour éviter les ralentissements)
-            $paypalDetails = null;
-            if ($order->payment_id && str_starts_with($order->payment_id, 'PAYPAL-')) {
-                try {
-                    $paypalService = new PayPalService();
-                    $result = $paypalService->getPaymentDetails($order->payment_id);
-                    if ($result['success']) {
-                        $paypalDetails = $result['data'];
-                    }
-                } catch (\Exception $e) {
-                    \Log::warning('PayPal details fetch failed: ' . $e->getMessage());
-                }
-            }
+            // Récupérer les détails PayPal depuis la base de données
+            $paypalDetails = $order->payment_details;
             
             return view('admin.orders.show', compact('order', 'paypalDetails'));
         } catch (\Exception $e) {
@@ -86,31 +81,351 @@ class OrderController extends Controller
     /**
      * Valider manuellement une commande
      */
-    public function validate(Order $order)
+    public function validate(Request $request, Order $order)
     {
         if ($order->status === 'paid') {
             return redirect()->back()
                 ->with('warning', 'Cette commande est déjà validée et le code IPTV a été envoyé.');
         }
 
-        // Marquer comme validé et générer le code IPTV
-        $order->update(['status' => 'paid']);
-        
-        // Générer le code IPTV seulement maintenant (après validation admin)
-        if ($order->subscription_id && !$order->iptv_code) {
-            $order->generateIptvCode();
-            $order->setExpirationDate();
-        }
+        $request->validate([
+            'm3u_username' => 'required|string|max:255',
+            'm3u_password' => 'required|string|max:255',
+            'm3u_server_url' => 'required|url|max:500',
+            'validation_message' => 'required|string|max:2000',
+        ]);
 
-        // Envoyer l'email de confirmation avec le code IPTV
         try {
-            Mail::to($order->customer_email)->send(new \App\Mail\OrderConfirmation($order));
+            // Générer le code IPTV si pas encore fait
+            if (!$order->iptv_code) {
+                $order->generateIptvCode();
+                $order->setExpirationDate();
+            }
+
+            // Construire l'URL M3U
+            $m3uUrl = $request->m3u_server_url . '/get.php?' . http_build_query([
+                'username' => $request->m3u_username,
+                'password' => $request->m3u_password,
+                'type' => 'm3u_plus'
+            ]);
+
+            // Mettre à jour la commande avec les identifiants M3U
+            $order->update([
+                'status' => 'paid',
+                'm3u_username' => $request->m3u_username,
+                'm3u_password' => $request->m3u_password,
+                'm3u_server_url' => $request->m3u_server_url,
+                'm3u_url' => $m3uUrl,
+                'm3u_generated' => true,
+                'm3u_generated_at' => now(),
+            ]);
+
+            // Recharger la commande pour avoir les données à jour
+            $order->refresh();
+
+            // Remplacer les variables dans le message personnalisé
+            $customMessage = $this->replaceMessageVariables($request->validation_message, $order);
+
+            // Créer le message admin pour l'historique
+            $adminMessage = \App\Models\AdminMessage::create([
+                'admin_user_id' => auth()->id(),
+                'order_id' => $order->id,
+                'recipient_email' => $order->customer_email,
+                'recipient_name' => $order->customer_name,
+                'subject' => 'Validation de votre commande ' . $order->order_number,
+                'message' => $customMessage,
+                'type' => 'order_update',
+            ]);
+
+            // Envoyer l'email de confirmation personnalisé
+            try {
+                Mail::to($order->customer_email)->sendNow(new \App\Mail\OrderConfirmation($order, $customMessage));
+                $adminMessage->markAsSent();
+            } catch (\Exception $e) {
+                logger()->error('Erreur envoi email validation personnalisée: ' . $e->getMessage());
+                $adminMessage->markAsFailed($e->getMessage());
+            }
+
+            return redirect()->route('admin.orders.show', $order)
+                ->with('success', 'Commande validée avec succès ! Identifiants M3U générés et email personnalisé envoyé au client.');
+
         } catch (\Exception $e) {
-            logger()->error('Erreur envoi email validation manuelle: ' . $e->getMessage());
+            logger()->error('Erreur validation commande: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la validation de la commande: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remplacer les variables dans le message personnalisé
+     */
+    private function replaceMessageVariables(string $message, Order $order): string
+    {
+        $variables = [
+            'customer_name' => $order->customer_name,
+            'order_number' => $order->order_number,
+            'iptv_code' => $order->iptv_code,
+            'm3u_username' => $order->m3u_username,
+            'm3u_password' => $order->m3u_password,
+            'm3u_url' => $order->m3u_url,
+            'subscription_name' => $order->subscription ? $order->subscription->name : 'Pack Revendeur',
+            'expires_at' => $order->expires_at ? $order->expires_at->format('d/m/Y') : 'N/A',
+            'app_name' => config('app.name'),
+        ];
+
+        $replacedMessage = $message;
+        foreach ($variables as $key => $value) {
+            $replacedMessage = str_replace('[' . $key . ']', $value, $replacedMessage);
         }
 
-        return redirect()->back()
-            ->with('success', 'Commande validée avec succès ! Code IPTV généré et email envoyé au client.');
+        return $replacedMessage;
+    }
+
+    /**
+     * Générer manuellement les identifiants M3U pour une commande
+     */
+    public function generateM3U(Order $order)
+    {
+        if (!$order->isPaid()) {
+            return redirect()->back()
+                ->with('error', 'Seules les commandes payées peuvent générer des identifiants M3U.');
+        }
+
+        if ($order->hasM3UCredentials()) {
+            return redirect()->back()
+                ->with('warning', 'Les identifiants M3U ont déjà été générés pour cette commande.');
+        }
+
+        try {
+            $m3uService = new M3UExtractorService();
+            $order = $m3uService->generateForOrder($order);
+
+            // Envoyer l'email avec les détails M3U
+            Mail::to($order->customer_email)->send(new \App\Mail\OrderM3UDetails($order));
+
+            return redirect()->back()
+                ->with('success', 'Identifiants M3U générés et email envoyé avec succès !');
+                
+        } catch (\Exception $e) {
+            logger()->error('Erreur génération M3U: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la génération des identifiants M3U: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Extraire les identifiants M3U depuis un fichier uploadé
+     */
+    public function extractM3U(Request $request, Order $order)
+    {
+        $request->validate([
+            'm3u_file' => 'required|file|mimes:txt,m3u|max:10240', // 10MB max
+        ]);
+
+        if (!$order->isPaid()) {
+            return redirect()->back()
+                ->with('error', 'Seules les commandes payées peuvent extraire des identifiants M3U.');
+        }
+
+        try {
+            $m3uService = new M3UExtractorService();
+            $file = $request->file('m3u_file');
+            $filePath = $file->getPathname();
+            
+            $credentials = $m3uService->extractFromFile($filePath);
+            
+            if (!$m3uService->validateCredentials($credentials)) {
+                return redirect()->back()
+                    ->with('error', 'Impossible d\'extraire les identifiants valides du fichier M3U.');
+            }
+
+            // Mettre à jour la commande avec les identifiants extraits
+            $order->update([
+                'm3u_username' => $credentials['username'],
+                'm3u_password' => $credentials['password'],
+                'm3u_server_url' => $credentials['server_url'],
+                'm3u_url' => $credentials['server_url'] . '/get.php?' . http_build_query([
+                    'username' => $credentials['username'],
+                    'password' => $credentials['password'],
+                    'type' => 'm3u_plus'
+                ]),
+                'm3u_generated' => true,
+                'm3u_generated_at' => now(),
+            ]);
+
+            // Envoyer l'email avec les détails M3U
+            Mail::to($order->customer_email)->send(new \App\Mail\OrderM3UDetails($order));
+
+            return redirect()->back()
+                ->with('success', 'Identifiants M3U extraits et email envoyé avec succès !');
+                
+        } catch (\Exception $e) {
+            logger()->error('Erreur extraction M3U: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erreur lors de l\'extraction des identifiants M3U: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Extraire les identifiants M3U depuis une URL
+     */
+    public function extractM3UFromUrl(Request $request, Order $order)
+    {
+        $request->validate([
+            'm3u_url' => 'required|url|max:500',
+        ]);
+
+        if (!$order->isPaid()) {
+            return redirect()->back()
+                ->with('error', 'Seules les commandes payées peuvent extraire des identifiants M3U.');
+        }
+
+        try {
+            $m3uService = new M3UExtractorService();
+            $credentials = $m3uService->extractFromUrl($request->m3u_url);
+            
+            if (!$m3uService->validateCredentials($credentials)) {
+                return redirect()->back()
+                    ->with('error', 'Impossible d\'extraire les identifiants valides de l\'URL M3U.');
+            }
+
+            // Mettre à jour la commande avec les identifiants extraits
+            $order->update([
+                'm3u_username' => $credentials['username'],
+                'm3u_password' => $credentials['password'],
+                'm3u_server_url' => $credentials['server_url'],
+                'm3u_url' => $credentials['server_url'] . '/get.php?' . http_build_query([
+                    'username' => $credentials['username'],
+                    'password' => $credentials['password'],
+                    'type' => 'm3u_plus'
+                ]),
+                'm3u_generated' => true,
+                'm3u_generated_at' => now(),
+            ]);
+
+            // Envoyer l'email avec les détails M3U
+            Mail::to($order->customer_email)->send(new \App\Mail\OrderM3UDetails($order));
+
+            return redirect()->back()
+                ->with('success', 'Identifiants M3U extraits de l\'URL et email envoyé avec succès !');
+                
+        } catch (\Exception $e) {
+            logger()->error('Erreur extraction M3U depuis URL: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erreur lors de l\'extraction des identifiants M3U: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Modifier les identifiants M3U existants
+     */
+    public function updateM3U(Request $request, Order $order)
+    {
+        $request->validate([
+            'm3u_username' => 'required|string|max:255',
+            'm3u_password' => 'required|string|max:255',
+            'm3u_server_url' => 'required|url|max:500',
+        ]);
+
+        if (!$order->isPaid()) {
+            return redirect()->back()
+                ->with('error', 'Seules les commandes payées peuvent modifier des identifiants M3U.');
+        }
+
+        try {
+            // Construire l'URL M3U
+            $m3uUrl = $request->m3u_server_url . '/get.php?' . http_build_query([
+                'username' => $request->m3u_username,
+                'password' => $request->m3u_password,
+                'type' => 'm3u_plus'
+            ]);
+
+            // Mettre à jour la commande avec les nouveaux identifiants
+            $order->update([
+                'm3u_username' => $request->m3u_username,
+                'm3u_password' => $request->m3u_password,
+                'm3u_server_url' => $request->m3u_server_url,
+                'm3u_url' => $m3uUrl,
+                'm3u_generated' => true,
+                'm3u_generated_at' => now(),
+            ]);
+
+            return redirect()->back()
+                ->with('success', 'Identifiants M3U modifiés avec succès !');
+                
+        } catch (\Exception $e) {
+            logger()->error('Erreur modification M3U: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la modification des identifiants M3U: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Supprimer les identifiants M3U
+     */
+    public function deleteM3U(Order $order)
+    {
+        if (!$order->isPaid()) {
+            return redirect()->back()
+                ->with('error', 'Seules les commandes payées peuvent supprimer des identifiants M3U.');
+        }
+
+        if (!$order->hasM3UCredentials()) {
+            return redirect()->back()
+                ->with('error', 'Aucun identifiant M3U à supprimer pour cette commande.');
+        }
+
+        try {
+            // Supprimer les identifiants M3U
+            $order->update([
+                'm3u_username' => null,
+                'm3u_password' => null,
+                'm3u_server_url' => null,
+                'm3u_url' => null,
+                'm3u_generated' => false,
+                'm3u_generated_at' => null,
+            ]);
+
+            return redirect()->back()
+                ->with('success', 'Identifiants M3U supprimés avec succès !');
+                
+        } catch (\Exception $e) {
+            logger()->error('Erreur suppression M3U: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erreur lors de la suppression des identifiants M3U: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Tester la connexion M3U
+     */
+    public function testM3UConnection(Order $order)
+    {
+        if (!$order->hasM3UCredentials()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun identifiant M3U généré pour cette commande.'
+            ]);
+        }
+
+        try {
+            $m3uService = new M3UExtractorService();
+            $credentials = [
+                'server_url' => $order->m3u_server_url,
+                'username' => $order->m3u_username,
+                'password' => $order->m3u_password,
+            ];
+
+            $result = $m3uService->testConnection($credentials);
+            
+            return response()->json($result);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du test: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -236,6 +551,7 @@ class OrderController extends Controller
     public function export(Request $request)
     {
         $orders = Order::with(['user', 'subscription'])
+            ->where('item_type', 'subscription')
             ->when($request->status, function ($query, $status) {
                 return $query->byStatus($status);
             })
@@ -264,7 +580,7 @@ class OrderController extends Controller
 
         return response($csv)
             ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename="commandes-' . date('Y-m-d') . '.csv"');
+            ->header('Content-Disposition', 'attachment; filename="commandes-abonnements-' . date('Y-m-d') . '.csv"');
     }
 
     /**

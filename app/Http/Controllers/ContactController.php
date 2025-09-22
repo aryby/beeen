@@ -25,14 +25,19 @@ class ContactController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        // Vérifier si reCAPTCHA est configuré
+        $recaptchaSecret = Setting::get('recaptcha_secret_key');
+        $isRecaptchaRequired = !empty($recaptchaSecret);
+        
+        $validationRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'subject' => 'required|string|max:255',
             'message' => 'required|string|max:2000',
             'type' => 'required|in:contact,support',
-            'g-recaptcha-response' => 'required',
-        ], [
+        ];
+        
+        $validationMessages = [
             'name.required' => 'Le nom est obligatoire.',
             'email.required' => 'L\'adresse email est obligatoire.',
             'email.email' => 'L\'adresse email n\'est pas valide.',
@@ -40,8 +45,15 @@ class ContactController extends Controller
             'message.required' => 'Le message est obligatoire.',
             'message.max' => 'Le message ne peut pas dépasser 2000 caractères.',
             'type.required' => 'Le type de message est obligatoire.',
-            'g-recaptcha-response.required' => 'Veuillez vérifier le reCAPTCHA.',
-        ]);
+        ];
+        
+        // Ajouter la validation reCAPTCHA seulement si configuré
+        if ($isRecaptchaRequired) {
+            $validationRules['g-recaptcha-response'] = 'required';
+            $validationMessages['g-recaptcha-response.required'] = 'Veuillez vérifier le reCAPTCHA.';
+        }
+        
+        $validated = $request->validate($validationRules, $validationMessages);
 
         // Vérifier reCAPTCHA
         $recaptchaSecret = Setting::get('recaptcha_secret_key');

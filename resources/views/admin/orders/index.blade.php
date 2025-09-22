@@ -1,13 +1,13 @@
 @extends('layouts.admin')
 
-@section('title', 'Gestion des Commandes')
-@section('page-title', 'Gestion des Commandes')
+@section('title', 'Gestion des Commandes d\'Abonnements')
+@section('page-title', 'Gestion des Commandes d\'Abonnements')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 mb-0">Commandes</h1>
-        <p class="text-muted">Gérez toutes les commandes clients et revendeurs</p>
+        <h1 class="h3 mb-0">Commandes d'Abonnements</h1>
+        <p class="text-muted">Gérez toutes les commandes d'abonnements clients</p>
     </div>
     <div class="d-flex gap-2">
         <a href="{{ route('admin.export.orders') }}" class="btn btn-outline-success">

@@ -1,6 +1,9 @@
 <x-mail::message>
 # 🎉 Commande confirmée !
 
+@if($custom_message)
+{!! nl2br(e($custom_message)) !!}
+@else
 Bonjour {{ $customer_name }},
 
 Merci pour votre commande ! Votre abonnement IPTV est maintenant actif.
@@ -17,11 +20,20 @@ Merci pour votre commande ! Votre abonnement IPTV est maintenant actif.
 
 **Code IPTV :** `{{ $iptv_code }}`
 
+@if($m3u_username && $m3u_password)
+**Nom d'utilisateur M3U :** `{{ $m3u_username }}`  
+**Mot de passe M3U :** `{{ $m3u_password }}`  
+@if($m3u_url)
+**URL M3U :** [Télécharger la playlist]({{ $m3u_url }})
+@endif
+@endif
+
 @if($expires_at)
 **Expire le :** {{ $expires_at->format('d/m/Y') }}
 @endif
 
-> ⚠️ **Important :** Conservez précieusement ce code. Il vous permet d'accéder à votre service IPTV.
+> ⚠️ **Important :** Conservez précieusement ces identifiants. Ils vous permettent d'accéder à votre service IPTV.
+@endif
 @endif
 
 ## 📱 Installation

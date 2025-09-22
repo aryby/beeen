@@ -216,7 +216,7 @@
                         </div>
                         
                         <!-- reCAPTCHA -->
-                        @if($recaptchaSiteKey)
+                        @if($recaptchaSiteKey && !empty($recaptchaSiteKey))
                             <div class="mb-4 text-center">
                                 <div class="g-recaptcha d-inline-block" data-sitekey="{{ $recaptchaSiteKey }}"></div>
                                 @error('g-recaptcha-response')
@@ -361,7 +361,7 @@
 @endsection
 
 @push('scripts')
-@if($recaptchaSiteKey)
+@if($recaptchaSiteKey && !empty($recaptchaSiteKey))
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 @endif
 

@@ -7,10 +7,12 @@ use App\Models\Subscription;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Services\PayPalService;
+use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
+    use PayPalDetailsExtractor;
     public function index()
     {
         $subscriptions = Subscription::active()
@@ -101,7 +103,7 @@ class SubscriptionController extends Controller
             if ($result['success']) {
                 // Sauvegarder l'ID PayPal pour le suivi
                 $order->update(['payment_id' => $result['order_id']]);
-                
+                // vous pouver les donnes a partir d'ici
                 // Rediriger vers PayPal
                 return redirect($result['approval_url']);
             } else {
@@ -152,9 +154,12 @@ class SubscriptionController extends Controller
             $result = $paypalService->capturePayment($paypalToken);
 
             if ($result['success'] && $result['status'] === 'COMPLETED') {
+                // Extraire et sauvegarder les détails PayPal importants
+                $paypalDetails = $this->extractPayPalDetails($result['data']);
+                
                 $order->update([
                     'status' => 'paid',
-                    'payment_details' => $result['data'],
+                    'payment_details' => $paypalDetails,
                 ]);
                 
                 // Générer le code IPTV si c'est un abonnement
@@ -217,4 +222,5 @@ class SubscriptionController extends Controller
         
         return response()->json(['status' => 'ok']);
     }
+
 }

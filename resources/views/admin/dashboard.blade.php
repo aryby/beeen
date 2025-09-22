@@ -115,7 +115,15 @@
                                             <small class="text-muted">{{ $order->created_at->format('d/m/Y H:i') }}</small>
                                         </td>
                                         <td>{{ $order->customer_name }}</td>
-                                        <td>{{ $order->subscription->name }}</td>
+                                        <td>
+                                            @if($order->subscription)
+                                                {{ $order->subscription->name }}
+                                            @elseif($order->resellerPack)
+                                                <span class="badge bg-info">Pack Revendeur: {{ $order->resellerPack->name }}</span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $order->formatted_amount }}</td>
                                         <td>
                                             <span class="badge bg-{{ $order->status === 'paid' ? 'success' : ($order->status === 'pending' ? 'warning' : 'danger') }}">

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\PayPalService;
 use App\Models\Setting;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TestPayPalController extends Controller
 {
@@ -13,44 +14,50 @@ class TestPayPalController extends Controller
         try {
             $paypalService = new PayPalService();
             
-            // Vérifier la configuration
+            // Test de configuration
             $config = [
-                'client_id' => Setting::get('paypal_client_id'),
-                'client_secret' => Setting::get('paypal_client_secret'),
-                'sandbox' => Setting::get('paypal_sandbox'),
-                'configured' => $paypalService->isConfigured(),
+                'client_id' => Setting::get('paypal_client_id') ?: env('PAYPAL_CLIENT_ID'),
+                'client_secret' => Setting::get('paypal_client_secret') ?: env('PAYPAL_CLIENT_SECRET'),
+                'sandbox' => Setting::get('paypal_sandbox', true) || env('PAYPAL_SANDBOX', true),
+                'base_url' => (Setting::get('paypal_sandbox', true) || env('PAYPAL_SANDBOX', true))
+                    ? 'https://api.sandbox.paypal.com' 
+                    : 'https://api.paypal.com'
             ];
             
-            if (!$paypalService->isConfigured()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'PayPal non configuré',
-                    'config' => $config
-                ]);
-            }
+            Log::info('PayPal Configuration Test', $config);
             
-            // Test de création d'un paiement simple
+            // Test de création de paiement
             $result = $paypalService->createPayment(
                 10.00,
                 'EUR',
-                'Test de connexion PayPal',
-                route('home'),
-                route('home')
+                'Test Payment',
+                'http://localhost:8000/test-success',
+                'http://localhost:8000/test-cancel'
             );
             
             return response()->json([
-                'success' => $result['success'],
-                'message' => $result['success'] ? 'Connexion PayPal réussie !' : $result['error'],
+                'success' => true,
                 'config' => $config,
                 'result' => $result
             ]);
             
         } catch (\Exception $e) {
+            Log::error('PayPal Test Error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage(),
-                'config' => $config ?? []
+                'error' => $e->getMessage(),
+                'config' => [
+                    'client_id' => Setting::get('paypal_client_id') ?: env('PAYPAL_CLIENT_ID'),
+                    'client_secret' => Setting::get('paypal_client_secret') ?: env('PAYPAL_CLIENT_SECRET'),
+                    'sandbox' => Setting::get('paypal_sandbox', true) || env('PAYPAL_SANDBOX', true),
+                ]
             ]);
         }
+    }
+
+    public function testPage()
+    {
+        return view('test-paypal');
     }
 }

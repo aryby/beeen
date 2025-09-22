@@ -23,6 +23,12 @@ class Order extends Model
         'payment_id',
         'status',
         'iptv_code',
+        'm3u_url',
+        'm3u_username',
+        'm3u_password',
+        'm3u_server_url',
+        'm3u_generated',
+        'm3u_generated_at',
         'expires_at',
         'item_type',
         'item_id',
@@ -42,6 +48,8 @@ class Order extends Model
             'is_guest_order' => 'boolean',
             'refund_amount' => 'decimal:2',
             'refunded_at' => 'datetime',
+            'm3u_generated' => 'boolean',
+            'm3u_generated_at' => 'datetime',
         ];
     }
 
@@ -145,5 +153,34 @@ class Order extends Model
             $this->expires_at = now()->addMonths($this->subscription->duration_months);
             $this->save();
         }
+    }
+
+    /**
+     * Generate M3U credentials and URL
+     */
+    public function generateM3UCredentials()
+    {
+        if (!$this->iptv_code) {
+            $this->generateIptvCode();
+        }
+
+        // Generate M3U credentials
+        $this->m3u_username = $this->iptv_code;
+        $this->m3u_password = $this->iptv_code;
+        $this->m3u_server_url = 'http://portal.iptv-pro.com:8080';
+        $this->m3u_url = "http://portal.iptv-pro.com/get.php?username={$this->iptv_code}&password={$this->iptv_code}&type=m3u_plus";
+        $this->m3u_generated = true;
+        $this->m3u_generated_at = now();
+        $this->save();
+
+        return $this;
+    }
+
+    /**
+     * Check if M3U credentials are generated
+     */
+    public function hasM3UCredentials()
+    {
+        return $this->m3u_generated && !empty($this->m3u_username) && !empty($this->m3u_password);
     }
 }

@@ -20,36 +20,64 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Custom Admin CSS -->
+    <!-- Soft UI Design System CSS -->
     <style>
         :root {
-            --admin-primary: #0d6efd;
-            --admin-secondary: #6c757d;
-            --admin-success: #198754;
-            --admin-danger: #dc3545;
-            --admin-warning: #ffc107;
-            --admin-info: #0dcaf0;
-            --admin-dark: #212529;
-            --admin-light: #f8f9fa;
+            /* Soft UI Colors */
+            --soft-primary: #cb0c9f;
+            --soft-secondary: #8392ab;
+            --soft-success: #82d616;
+            --soft-danger: #ea0606;
+            --soft-warning: #fbcf33;
+            --soft-info: #17c1e8;
+            --soft-light: #e9ecef;
+            --soft-dark: #344767;
+            --soft-white: #fff;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(310deg, #7928ca 0%, #ff0080 100%);
+            --gradient-secondary: linear-gradient(310deg, #627594 0%, #a8b8d8 100%);
+            --gradient-success: linear-gradient(310deg, #17ad37 0%, #98ec2d 100%);
+            --gradient-danger: linear-gradient(310deg, #ea0606 0%, #ff667c 100%);
+            --gradient-warning: linear-gradient(310deg, #f53939 0%, #fbcf33 100%);
+            --gradient-info: linear-gradient(310deg, #2152ff 0%, #21d4fd 100%);
+            --gradient-dark: linear-gradient(310deg, #141727 0%, #3a416f 100%);
+            
+            /* Shadows */
+            --shadow-soft: 0 0.3125rem 0.625rem 0 rgba(0, 0, 0, 0.12);
+            --shadow-soft-lg: 0 0.625rem 1.875rem 0 rgba(0, 0, 0, 0.1);
+            --shadow-soft-xl: 0 1.25rem 3.125rem 0 rgba(0, 0, 0, 0.15);
+            
+            /* Border radius */
+            --border-radius-soft: 0.75rem;
+            --border-radius-soft-lg: 1rem;
+            --border-radius-soft-xl: 1.5rem;
+            
+            /* Admin specific */
             --sidebar-width: 280px;
         }
 
         body {
-            font-family: 'Figtree', sans-serif;
+            font-family: "Open Sans", sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--soft-dark);
             background-color: #f8f9fa;
         }
 
+        /* Soft UI Admin Sidebar */
         .admin-sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(135deg, var(--admin-dark) 0%, #495057 100%);
+            background: var(--gradient-dark);
             color: white;
             overflow-y: auto;
             transition: transform 0.3s ease;
             z-index: 1050;
+            box-shadow: var(--shadow-soft-xl);
         }
 
         .admin-sidebar.collapsed {
@@ -71,6 +99,8 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             font-weight: 700;
             font-size: 1.25rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
         }
 
         .sidebar-nav {
@@ -84,6 +114,7 @@
             text-transform: uppercase;
             color: rgba(255, 255, 255, 0.6);
             margin-top: 1rem;
+            letter-spacing: 0.5px;
         }
 
         .nav-section:first-child {
@@ -98,18 +129,22 @@
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
+            border-radius: 0 var(--border-radius-soft) var(--border-radius-soft) 0;
+            margin: 0.25rem 1rem 0.25rem 0;
         }
 
         .sidebar-nav .nav-link:hover {
             color: white;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-left-color: var(--admin-primary);
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: var(--soft-primary);
+            transform: translateX(5px);
         }
 
         .sidebar-nav .nav-link.active {
             color: white;
-            background-color: rgba(13, 110, 253, 0.2);
-            border-left-color: var(--admin-primary);
+            background: var(--gradient-primary);
+            border-left-color: var(--soft-primary);
+            box-shadow: var(--shadow-soft);
         }
 
         .sidebar-nav .nav-link i {
@@ -118,76 +153,210 @@
             text-align: center;
         }
 
+        /* Soft UI Admin Navbar */
         .admin-navbar {
-            background: white;
-            border-bottom: 1px solid #dee2e6;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: saturate(200%) blur(30px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding: 1rem 1.5rem;
             margin-bottom: 2rem;
+            box-shadow: var(--shadow-soft);
+            border-radius: 0 0 var(--border-radius-soft-lg) var(--border-radius-soft-lg);
         }
 
+        /* Soft UI Stats Cards */
         .stats-card {
             background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border-left: 4px solid var(--admin-primary);
-            transition: transform 0.2s ease;
+            border-radius: var(--border-radius-soft-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
         }
 
         .stats-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-soft-lg);
         }
 
-        .stats-card.success {
-            border-left-color: var(--admin-success);
+        .stats-card.success::before {
+            background: var(--gradient-success);
         }
 
-        .stats-card.warning {
-            border-left-color: var(--admin-warning);
+        .stats-card.warning::before {
+            background: var(--gradient-warning);
         }
 
-        .stats-card.danger {
-            border-left-color: var(--admin-danger);
+        .stats-card.danger::before {
+            background: var(--gradient-danger);
         }
 
-        .stats-card.info {
-            border-left-color: var(--admin-info);
+        .stats-card.info::before {
+            background: var(--gradient-info);
         }
 
         .stats-value {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            color: var(--admin-dark);
+            color: var(--soft-dark);
+            margin-bottom: 0.5rem;
         }
 
         .stats-label {
-            color: var(--admin-secondary);
+            color: var(--soft-secondary);
             font-size: 0.875rem;
-            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .chart-container {
             position: relative;
             height: 300px;
             width: 100%;
+            background: white;
+            border-radius: var(--border-radius-soft-lg);
+            padding: 1rem;
+            box-shadow: var(--shadow-soft);
         }
 
+        /* Soft UI Table Cards */
         .table-card {
             background: white;
-            border-radius: 10px;
+            border-radius: var(--border-radius-soft-lg);
             overflow: hidden;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            box-shadow: var(--shadow-soft);
+            border: none;
         }
 
         .table-card .card-header {
-            background: var(--admin-light);
-            border-bottom: 1px solid #dee2e6;
-            padding: 1rem 1.5rem;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 1.5rem;
             font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .table-card .table {
+            margin-bottom: 0;
+        }
+
+        .table-card .table th {
+            border-top: none;
+            font-weight: 600;
+            color: var(--soft-dark);
+            padding: 1rem;
+        }
+
+        .table-card .table td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Soft UI Buttons */
+        .btn-soft {
+            border: none;
+            border-radius: var(--border-radius-soft);
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: none;
+            transition: all 0.15s ease-in;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-soft:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-soft-lg);
+        }
+
+        .btn-soft-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-soft-success {
+            background: var(--gradient-success);
+            color: white;
+        }
+
+        .btn-soft-danger {
+            background: var(--gradient-danger);
+            color: white;
+        }
+
+        .btn-soft-warning {
+            background: var(--gradient-warning);
+            color: white;
+        }
+
+        .btn-soft-info {
+            background: var(--gradient-info);
+            color: white;
+        }
+
+        .btn-soft-outline {
+            background: transparent;
+            border: 1px solid var(--soft-primary);
+            color: var(--soft-primary);
         }
 
         .btn-toggle-sidebar {
             display: none;
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            border-radius: var(--border-radius-soft);
+            padding: 0.5rem 1rem;
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* Soft UI Alerts */
+        .alert-soft {
+            border: none;
+            border-radius: var(--border-radius-soft-lg);
+            padding: 1rem 1.5rem;
+            border-left: 4px solid;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .alert-soft.alert-success {
+            background: rgba(130, 214, 22, 0.1);
+            border-left-color: var(--soft-success);
+            color: #0f5132;
+        }
+
+        .alert-soft.alert-danger {
+            background: rgba(234, 6, 6, 0.1);
+            border-left-color: var(--soft-danger);
+            color: #721c24;
+        }
+
+        .alert-soft.alert-warning {
+            background: rgba(251, 207, 51, 0.1);
+            border-left-color: var(--soft-warning);
+            color: #664d03;
+        }
+
+        .alert-soft.alert-info {
+            background: rgba(23, 193, 232, 0.1);
+            border-left-color: var(--soft-info);
+            color: #055160;
         }
 
         /* Responsive */
@@ -209,12 +378,6 @@
             }
         }
 
-        /* Dark mode for charts */
-        .chart-dark {
-            background-color: #2d3748;
-            color: white;
-        }
-
         /* Custom scrollbar */
         .admin-sidebar::-webkit-scrollbar {
             width: 6px;
@@ -231,6 +394,30 @@
 
         .admin-sidebar::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Badge styles */
+        .badge-soft {
+            border-radius: var(--border-radius-soft);
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .badge-soft.bg-success {
+            background: var(--gradient-success) !important;
+        }
+
+        .badge-soft.bg-warning {
+            background: var(--gradient-warning) !important;
+        }
+
+        .badge-soft.bg-danger {
+            background: var(--gradient-danger) !important;
+        }
+
+        .badge-soft.bg-info {
+            background: var(--gradient-info) !important;
         }
     </style>
 
@@ -260,7 +447,7 @@
                 <i class="bi bi-cart"></i>
                 Commandes
                 @if(App\Models\Message::unread()->count() > 0)
-                    <span class="badge bg-danger ms-auto">{{ App\Models\Order::pending()->count() }}</span>
+                    <span class="badge badge-soft bg-danger ms-auto">{{ App\Models\Order::pending()->count() }}</span>
                 @endif
             </a>
             <a href="{{ route('admin.resellers.index') }}" class="nav-link {{ request()->routeIs('admin.resellers.*') ? 'active' : '' }}">
@@ -277,7 +464,7 @@
                 <i class="bi bi-envelope"></i>
                 Messages
                 @if(App\Models\Message::unread()->count() > 0)
-                    <span class="badge bg-warning ms-auto">{{ App\Models\Message::unread()->count() }}</span>
+                    <span class="badge badge-soft bg-warning ms-auto">{{ App\Models\Message::unread()->count() }}</span>
                 @endif
             </a>
             <a href="#" class="nav-link">
@@ -318,10 +505,10 @@
                 <div class="d-flex align-items-center">
                     <!-- Notifications -->
                     <div class="dropdown me-3">
-                        <button class="btn btn-outline-secondary dropdown-toggle position-relative" data-bs-toggle="dropdown">
+                        <button class="btn btn-soft-outline dropdown-toggle position-relative" data-bs-toggle="dropdown">
                             <i class="bi bi-bell"></i>
                             @if(App\Models\Message::unread()->count() > 0)
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <span class="position-absolute top-0 start-100 translate-middle badge badge-soft bg-danger rounded-pill">
                                     {{ App\Models\Message::unread()->count() }}
                                 </span>
                             @endif
@@ -353,7 +540,7 @@
                     
                     <!-- User Menu -->
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <button class="btn btn-soft-outline dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle me-1"></i>
                             {{ Auth::user()->name }}
                         </button>
@@ -377,21 +564,21 @@
 
         <!-- Alerts -->
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mx-4" role="alert">
+            <div class="alert alert-soft alert-success alert-dismissible fade show mx-4" role="alert">
                 <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
         @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show mx-4" role="alert">
+            <div class="alert alert-soft alert-danger alert-dismissible fade show mx-4" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
         @if(session('warning'))
-            <div class="alert alert-warning alert-dismissible fade show mx-4" role="alert">
+            <div class="alert alert-soft alert-warning alert-dismissible fade show mx-4" role="alert">
                 <i class="bi bi-exclamation-triangle me-2"></i>{{ session('warning') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>

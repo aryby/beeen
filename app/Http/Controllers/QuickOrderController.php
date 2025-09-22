@@ -11,11 +11,13 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Services\PayPalService;
 use App\Services\PayPalServiceAlternative;
+use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
 class QuickOrderController extends Controller
 {
+    use PayPalDetailsExtractor;
     /**
      * Traiter une commande rapide (visiteur sans compte)
      */
@@ -256,10 +258,13 @@ class QuickOrderController extends Controller
         $result = $paypalService->capturePayment($paypalOrderId);
 
         if ($result['success'] && $result['status'] === 'COMPLETED') {
+            // Extraire et sauvegarder les détails PayPal importants
+            $paypalDetails = $this->extractPayPalDetails($result['data']);
+            
             // Marquer la commande comme payée
             $order->update([
                 'status' => 'paid',
-                'payment_details' => json_encode($result['data']),
+                'payment_details' => $paypalDetails,
             ]);
 
             // Traitement spécifique selon le type
@@ -298,4 +303,5 @@ class QuickOrderController extends Controller
                 ->with('error', 'Le paiement n\'a pas pu être confirmé.');
         }
     }
+
 }

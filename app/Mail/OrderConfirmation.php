@@ -19,7 +19,8 @@ class OrderConfirmation extends Mailable implements ShouldQueue
      * Create a new message instance.
      */
     public function __construct(
-        public Order $order
+        public Order $order,
+        public ?string $customMessage = null
     ) {
         //
     }
@@ -47,6 +48,10 @@ class OrderConfirmation extends Mailable implements ShouldQueue
                 'customer_name' => $this->order->customer_name,
                 'iptv_code' => $this->order->iptv_code,
                 'expires_at' => $this->order->expires_at,
+                'custom_message' => $this->customMessage,
+                'm3u_username' => $this->order->m3u_username,
+                'm3u_password' => $this->order->m3u_password,
+                'm3u_url' => $this->order->m3u_url,
             ]
         );
     }
