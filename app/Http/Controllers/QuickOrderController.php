@@ -12,6 +12,7 @@ use App\Models\Setting;
 use App\Services\PayPalService;
 use App\Services\PayPalServiceAlternative;
 use App\Services\DynamicConfigService;
+use App\Services\DynamicMailService;
 use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -225,13 +226,15 @@ class QuickOrderController extends Controller
             
             // Envoyer email de confirmation de commande (sans code IPTV)
             try {
-                // S'assurer que SMTP est configuré avant d'envoyer l'email
-                if (DynamicConfigService::isSmtpConfigured()) {
-                    \Illuminate\Support\Facades\Mail::to($order->customer_email)
-                        ->send(new \App\Mail\OrderPendingValidation($order));
+                $mailSent = DynamicMailService::send(
+                    $order->customer_email,
+                    new \App\Mail\OrderPendingValidation($order)
+                );
+                
+                if ($mailSent) {
                     \Log::info('Order pending validation email sent successfully');
                 } else {
-                    \Log::warning('SMTP not configured, email not sent for order: ' . $order->id);
+                    \Log::warning('Failed to send order pending validation email for order: ' . $order->id);
                 }
             } catch (\Exception $e) {
                 \Log::error('Email error in simulation: ' . $e->getMessage());
@@ -303,13 +306,15 @@ class QuickOrderController extends Controller
                 
                 // Envoyer l'email de confirmation
                 try {
-                    // S'assurer que SMTP est configuré avant d'envoyer l'email
-                    if (DynamicConfigService::isSmtpConfigured()) {
-                        \Illuminate\Support\Facades\Mail::to($order->customer_email)
-                            ->send(new \App\Mail\OrderConfirmation($order));
+                    $mailSent = DynamicMailService::send(
+                        $order->customer_email,
+                        new \App\Mail\OrderConfirmation($order)
+                    );
+                    
+                    if ($mailSent) {
                         \Log::info('Order confirmation email sent successfully for order: ' . $order->id);
                     } else {
-                        \Log::warning('SMTP not configured, email not sent for order: ' . $order->id);
+                        \Log::warning('Failed to send order confirmation email for order: ' . $order->id);
                     }
                 } catch (\Exception $e) {
                     \Log::error('Erreur envoi email commande rapide: ' . $e->getMessage());

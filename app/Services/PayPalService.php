@@ -147,34 +147,46 @@ class PayPalService
         try {
             $token = $this->getAccessToken();
 
-            // PayPal attend un body JSON vide pour la capture
-            $response = Http::withToken($token)
-                ->withOptions([
-                    'verify' => false,
-                    'timeout' => 30,
-                    'curl' => [
-                        CURLOPT_SSL_VERIFYPEER => false,
-                        CURLOPT_SSL_VERIFYHOST => false,
-                    ]
-                ])
-                ->withHeaders([
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                    'Prefer' => 'return=representation'
-                ])
-                ->post($this->baseUrl . "/v2/checkout/orders/{$orderId}/capture", []);
+            // Utiliser cURL direct pour éviter les problèmes avec le body JSON vide
+            $ch = curl_init();
+            
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $this->baseUrl . "/v2/checkout/orders/{$orderId}/capture",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode([]), // Body JSON vide explicite
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    'Prefer: return=representation',
+                    'Authorization: Bearer ' . $token
+                ],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_TIMEOUT => 30,
+            ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                
-                return [
-                    'success' => true,
-                    'status' => $data['status'],
-                    'data' => $data
-                ];
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                throw new \Exception('cURL Error: ' . $error);
             }
 
-            throw new \Exception('Erreur lors de la capture du paiement: ' . $response->body());
+            if ($httpCode !== 200 && $httpCode !== 201) {
+                throw new \Exception('HTTP Error: ' . $httpCode . ' - ' . $response);
+            }
+
+            $data = json_decode($response, true);
+            
+            return [
+                'success' => true,
+                'status' => $data['status'],
+                'data' => $data
+            ];
+
         } catch (\Exception $e) {
             Log::error('PayPal Capture Payment Error: ' . $e->getMessage());
             return [

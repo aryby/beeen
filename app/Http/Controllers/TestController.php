@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\DynamicConfigService;
+use App\Services\DynamicMailService;
 use App\Models\Setting;
 
 class TestController extends Controller
@@ -16,7 +17,7 @@ class TestController extends Controller
         // Configurer dynamiquement
         DynamicConfigService::configureAll();
         
-        $smtpConfigured = DynamicConfigService::isSmtpConfigured();
+        $smtpConfigured = DynamicMailService::isSmtpConfigured();
         $paypalConfigured = DynamicConfigService::isPayPalConfigured();
         
         $settings = [
@@ -41,24 +42,34 @@ class TestController extends Controller
         try {
             $email = $request->input('email', 'test@example.com');
             
-            // Configurer SMTP dynamiquement
-            if (!DynamicConfigService::configureSmtp()) {
+            // Créer un mailable de test simple
+            $mailable = new class($email) extends \Illuminate\Mail\Mailable {
+                private $email;
+                
+                public function __construct($email) {
+                    $this->email = $email;
+                }
+                
+                public function build() {
+                    return $this->subject('Test Email - IPTV Pro')
+                               ->text('emails.test', ['email' => $this->email]);
+                }
+            };
+            
+            // Utiliser le service de mail dynamique
+            $mailSent = DynamicMailService::send($email, $mailable);
+            
+            if ($mailSent) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email de test envoyé avec succès à ' . $email
+                ]);
+            } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'SMTP non configuré. Veuillez configurer les paramètres SMTP dans l\'administration.'
+                    'message' => 'Échec de l\'envoi de l\'email. Vérifiez la configuration SMTP.'
                 ]);
             }
-            
-            // Envoyer un email de test
-            \Mail::raw('Ceci est un email de test depuis IPTV Pro.', function ($message) use ($email) {
-                $message->to($email)
-                        ->subject('Test Email - IPTV Pro');
-            });
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Email de test envoyé avec succès à ' . $email
-            ]);
             
         } catch (\Exception $e) {
             \Log::error('Test email error: ' . $e->getMessage());

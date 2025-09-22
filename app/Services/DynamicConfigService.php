@@ -37,12 +37,12 @@ class DynamicConfigService
         Config::set('mail.from.address', $contactEmail);
         Config::set('mail.from.name', $siteName);
 
-        // Reconfigurer le transport mail
+        // Pour Laravel 12, on force la reconfiguration du manager mail
         try {
-            Mail::getSwiftMailer()->stop();
-            Mail::getSwiftMailer()->start();
+            app('mail.manager')->forgetMailers();
+            \Log::info('SMTP configuration updated dynamically');
         } catch (\Exception $e) {
-            \Log::warning('Failed to restart mail transport: ' . $e->getMessage());
+            \Log::warning('Failed to update mail configuration: ' . $e->getMessage());
         }
 
         return true;
