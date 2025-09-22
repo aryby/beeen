@@ -164,15 +164,16 @@ class PayPalServiceAlternative
         try {
             $token = $this->getAccessToken();
 
-            // Essayer d'abord sans body du tout
+            // PayPal v2 API - Utiliser directement la méthode avec body JSON vide
             $ch = curl_init();
             
             curl_setopt_array($ch, [
                 CURLOPT_URL => $this->baseUrl . "/v2/checkout/orders/{$orderId}/capture",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
-                // Pas de CURLOPT_POSTFIELDS - PayPal peut accepter une requête POST vide
+                CURLOPT_POSTFIELDS => '{}', // Body JSON vide obligatoire
                 CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
                     'Accept: application/json',
                     'Prefer: return=representation',
                     'Authorization: Bearer ' . $token,
@@ -190,39 +191,6 @@ class PayPalServiceAlternative
 
             if ($error) {
                 throw new \Exception('cURL Error: ' . $error);
-            }
-
-            // Si ça échoue, essayer avec un body JSON vide
-            if ($httpCode === 400) {
-                Log::info('PayPal Alternative capture failed without body, trying with empty JSON body');
-                
-                $ch = curl_init();
-                
-                curl_setopt_array($ch, [
-                    CURLOPT_URL => $this->baseUrl . "/v2/checkout/orders/{$orderId}/capture",
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_POST => true,
-                    CURLOPT_POSTFIELDS => '{}', // String JSON vide
-                    CURLOPT_HTTPHEADER => [
-                        'Content-Type: application/json',
-                        'Accept: application/json',
-                        'Prefer: return=representation',
-                        'Authorization: Bearer ' . $token,
-                        'PayPal-Request-Id: ' . uniqid()
-                    ],
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_SSL_VERIFYHOST => false,
-                    CURLOPT_TIMEOUT => 30,
-                ]);
-
-                $response = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $error = curl_error($ch);
-                curl_close($ch);
-
-                if ($error) {
-                    throw new \Exception('cURL Error (retry): ' . $error);
-                }
             }
 
             if ($httpCode !== 200 && $httpCode !== 201) {
