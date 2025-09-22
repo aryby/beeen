@@ -156,6 +156,62 @@ class PayPalServiceAlternative
         }
     }
 
+    /**
+     * Capturer un paiement PayPal
+     */
+    public function capturePayment($orderId)
+    {
+        try {
+            $token = $this->getAccessToken();
+
+            $ch = curl_init();
+            
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $this->baseUrl . "/v2/checkout/orders/{$orderId}/capture",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode([]),
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $token,
+                    'Accept: application/json',
+                    'Prefer: return=representation'
+                ],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_TIMEOUT => 30,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                throw new \Exception('cURL Error: ' . $error);
+            }
+
+            if ($httpCode !== 200) {
+                throw new \Exception('HTTP Error: ' . $httpCode . ' - ' . $response);
+            }
+
+            $data = json_decode($response, true);
+            
+            return [
+                'success' => true,
+                'status' => $data['status'],
+                'data' => $data
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('PayPal Alternative Capture Payment Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
     public function isConfigured()
     {
         return !empty($this->clientId) && !empty($this->clientSecret);

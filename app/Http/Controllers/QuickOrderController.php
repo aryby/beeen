@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Services\PayPalService;
 use App\Services\PayPalServiceAlternative;
+use App\Services\DynamicConfigService;
 use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -100,6 +101,9 @@ class QuickOrderController extends Controller
                 $description = "Pack Revendeur {$item->name} - {$order->order_number}";
             }
 
+            // Configurer dynamiquement SMTP et PayPal
+            DynamicConfigService::configureAll();
+            
             // Initier le paiement PayPal
             $paypalService = new PayPalService();
             
@@ -221,8 +225,14 @@ class QuickOrderController extends Controller
             
             // Envoyer email de confirmation de commande (sans code IPTV)
             try {
-                \Illuminate\Support\Facades\Mail::to($order->customer_email)
-                    ->send(new \App\Mail\OrderPendingValidation($order));
+                // S'assurer que SMTP est configuré avant d'envoyer l'email
+                if (DynamicConfigService::isSmtpConfigured()) {
+                    \Illuminate\Support\Facades\Mail::to($order->customer_email)
+                        ->send(new \App\Mail\OrderPendingValidation($order));
+                    \Log::info('Order pending validation email sent successfully');
+                } else {
+                    \Log::warning('SMTP not configured, email not sent for order: ' . $order->id);
+                }
             } catch (\Exception $e) {
                 \Log::error('Email error in simulation: ' . $e->getMessage());
             }
@@ -243,6 +253,9 @@ class QuickOrderController extends Controller
      */
     public function handlePayPalReturn(Request $request)
     {
+        // Configurer dynamiquement SMTP et PayPal
+        DynamicConfigService::configureAll();
+        
         $orderId = $request->get('order');
         $paypalOrderId = $request->get('token');
 
@@ -290,8 +303,14 @@ class QuickOrderController extends Controller
                 
                 // Envoyer l'email de confirmation
                 try {
-                    \Illuminate\Support\Facades\Mail::to($order->customer_email)
-                        ->send(new \App\Mail\OrderConfirmation($order));
+                    // S'assurer que SMTP est configuré avant d'envoyer l'email
+                    if (DynamicConfigService::isSmtpConfigured()) {
+                        \Illuminate\Support\Facades\Mail::to($order->customer_email)
+                            ->send(new \App\Mail\OrderConfirmation($order));
+                        \Log::info('Order confirmation email sent successfully for order: ' . $order->id);
+                    } else {
+                        \Log::warning('SMTP not configured, email not sent for order: ' . $order->id);
+                    }
                 } catch (\Exception $e) {
                     \Log::error('Erreur envoi email commande rapide: ' . $e->getMessage());
                 }

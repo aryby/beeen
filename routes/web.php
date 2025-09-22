@@ -72,6 +72,11 @@ Route::middleware('auth')->group(function () {
         }
     })->name('dashboard');
     
+    // Routes de test (à supprimer en production)
+    Route::get('/test', [App\Http\Controllers\TestController::class, 'index'])->name('test.index');
+    Route::post('/test/email', [App\Http\Controllers\TestController::class, 'testEmail'])->name('test.email');
+    Route::get('/test/paypal', [App\Http\Controllers\TestController::class, 'testPayPal'])->name('test.paypal');
+    
     // Dashboard client
     Route::get('/customer/dashboard', [ProfileController::class, 'customerDashboard'])
         ->middleware('role:customer')

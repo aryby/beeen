@@ -147,6 +147,7 @@ class PayPalService
         try {
             $token = $this->getAccessToken();
 
+            // PayPal attend un body JSON vide pour la capture
             $response = Http::withToken($token)
                 ->withOptions([
                     'verify' => false,
@@ -156,7 +157,12 @@ class PayPalService
                         CURLOPT_SSL_VERIFYHOST => false,
                     ]
                 ])
-                ->post($this->baseUrl . "/v2/checkout/orders/{$orderId}/capture");
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'Prefer' => 'return=representation'
+                ])
+                ->post($this->baseUrl . "/v2/checkout/orders/{$orderId}/capture", []);
 
             if ($response->successful()) {
                 $data = $response->json();
