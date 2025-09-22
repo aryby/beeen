@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/test', [App\Http\Controllers\TestController::class, 'index'])->name('test.index');
     Route::post('/test/email', [App\Http\Controllers\TestController::class, 'testEmail'])->name('test.email');
     Route::get('/test/paypal', [App\Http\Controllers\TestController::class, 'testPayPal'])->name('test.paypal');
+    Route::post('/test/paypal-capture', [App\Http\Controllers\TestController::class, 'testPayPalCapture'])->name('test.paypal.capture');
     
     // Dashboard client
     Route::get('/customer/dashboard', [ProfileController::class, 'customerDashboard'])

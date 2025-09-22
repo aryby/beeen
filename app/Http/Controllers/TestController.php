@@ -96,9 +96,17 @@ class TestController extends Controller
                 ]);
             }
             
+            // Test de connexion avec l'API PayPal (via isConfigured qui teste la connexion)
+            if (!$paypalService->isConfigured()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'PayPal non configuré ou erreur de connexion'
+                ]);
+            }
+            
             return response()->json([
                 'success' => true,
-                'message' => 'PayPal est correctement configuré'
+                'message' => 'PayPal est correctement configuré et connecté'
             ]);
             
         } catch (\Exception $e) {
@@ -107,6 +115,42 @@ class TestController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du test PayPal: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Test de capture PayPal avec un order ID de test
+     */
+    public function testPayPalCapture(Request $request)
+    {
+        try {
+            $orderId = $request->input('order_id', 'TEST_ORDER_ID');
+            
+            $paypalService = new \App\Services\PayPalService();
+            
+            if (!$paypalService->isConfigured()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'PayPal non configuré'
+                ]);
+            }
+            
+            // Test de capture (cela va probablement échouer avec un faux ID, mais on peut voir l'erreur)
+            $result = $paypalService->capturePayment($orderId);
+            
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['success'] ? 'Capture réussie' : 'Capture échouée: ' . ($result['error'] ?? 'Erreur inconnue'),
+                'details' => $result
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Test PayPal capture error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du test de capture: ' . $e->getMessage()
             ]);
         }
     }

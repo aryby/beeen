@@ -147,19 +147,19 @@ class PayPalService
         try {
             $token = $this->getAccessToken();
 
-            // Utiliser cURL direct pour éviter les problèmes avec le body JSON vide
+            // PayPal v2 API - Essayer d'abord sans body du tout
             $ch = curl_init();
             
             curl_setopt_array($ch, [
                 CURLOPT_URL => $this->baseUrl . "/v2/checkout/orders/{$orderId}/capture",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode([]), // Body JSON vide explicite
+                // Pas de CURLOPT_POSTFIELDS - PayPal peut accepter une requête POST vide
                 CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
                     'Accept: application/json',
                     'Prefer: return=representation',
-                    'Authorization: Bearer ' . $token
+                    'Authorization: Bearer ' . $token,
+                    'PayPal-Request-Id: ' . uniqid() // ID unique pour éviter les doublons
                 ],
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
@@ -175,11 +175,48 @@ class PayPalService
                 throw new \Exception('cURL Error: ' . $error);
             }
 
+            // Si ça échoue, essayer avec un body JSON vide
+            if ($httpCode === 400) {
+                Log::info('PayPal capture failed without body, trying with empty JSON body');
+                
+                $ch = curl_init();
+                
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => $this->baseUrl . "/v2/checkout/orders/{$orderId}/capture",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => '{}', // String JSON vide
+                    CURLOPT_HTTPHEADER => [
+                        'Content-Type: application/json',
+                        'Accept: application/json',
+                        'Prefer: return=representation',
+                        'Authorization: Bearer ' . $token,
+                        'PayPal-Request-Id: ' . uniqid()
+                    ],
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_TIMEOUT => 30,
+                ]);
+
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $error = curl_error($ch);
+                curl_close($ch);
+
+                if ($error) {
+                    throw new \Exception('cURL Error (retry): ' . $error);
+                }
+            }
+
             if ($httpCode !== 200 && $httpCode !== 201) {
                 throw new \Exception('HTTP Error: ' . $httpCode . ' - ' . $response);
             }
 
             $data = json_decode($response, true);
+            
+            if (!$data) {
+                throw new \Exception('Invalid JSON response from PayPal: ' . $response);
+            }
             
             return [
                 'success' => true,

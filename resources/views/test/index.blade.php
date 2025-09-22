@@ -87,6 +87,13 @@
                                     <button class="btn btn-primary" onclick="testPayPal()">
                                         <i class="bi bi-paypal me-1"></i>Tester PayPal
                                     </button>
+                                    <hr>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" id="testPayPalOrderId" placeholder="Order ID PayPal" value="">
+                                        <button class="btn btn-warning" onclick="testPayPalCapture()">
+                                            <i class="bi bi-capture me-1"></i>Test Capture
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -224,6 +231,45 @@ function testPayPal() {
         },
         error: function(xhr) {
             showToast('Erreur lors du test PayPal', 'error');
+        },
+        complete: function() {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    });
+}
+
+function testPayPalCapture() {
+    const orderId = document.getElementById('testPayPalOrderId').value;
+    
+    if (!orderId) {
+        showToast('Veuillez saisir un Order ID PayPal', 'warning');
+        return;
+    }
+    
+    // Afficher un loading
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Test...';
+    button.disabled = true;
+    
+    $.ajax({
+        url: '{{ route("test.paypal.capture") }}',
+        method: 'POST',
+        data: {
+            order_id: orderId,
+            _token: '{{ csrf_token() }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                showToast(response.message, 'success');
+            } else {
+                showToast(response.message, 'error');
+                console.log('Capture details:', response.details);
+            }
+        },
+        error: function(xhr) {
+            showToast('Erreur lors du test de capture', 'error');
         },
         complete: function() {
             button.innerHTML = originalText;
