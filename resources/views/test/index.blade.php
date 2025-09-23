@@ -71,7 +71,7 @@
                                     <h5 class="card-title">Test Email</h5>
                                     <p class="card-text">Tester l'envoi d'un email avec la configuration SMTP actuelle.</p>
                                     <div class="input-group mb-3">
-                                        <input type="email" class="form-control" id="testEmail" placeholder="email@example.com" value="test@example.com">
+                                        <input type="email" class="form-control" id="testEmail" placeholder="email@iptv2smartv.com" value="{{ $defaultTestEmail ?? '' }}">
                                         <button class="btn btn-primary" onclick="testEmail(event)">
                                             <i class="bi bi-send me-1"></i>Envoyer
                                         </button>

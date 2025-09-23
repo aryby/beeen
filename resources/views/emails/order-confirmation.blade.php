@@ -69,6 +69,6 @@ Merci de votre confiance !
 L'équipe {{ config('app.name') }}
 
 <x-mail::subcopy>
-Si vous avez des questions, n'hésitez pas à nous contacter à {{ App\Models\Setting::get('contact_email', 'contact@example.com') }}
+Si vous avez des questions, n'hésitez pas à nous contacter à {{ App\Models\Setting::get('contact_email', 'contact@iptv2smartv.com') }}
 </x-mail::subcopy>
 </x-mail::message>

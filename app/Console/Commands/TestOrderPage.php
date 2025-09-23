@@ -40,7 +40,7 @@ class TestOrderPage extends Command
             if (!$user) {
                 $user = User::create([
                     'name' => 'Test User',
-                    'email' => 'test@example.com',
+                    'email' => 'test@iptv2smartv.com',
                     'password' => bcrypt('password'),
                     'role' => 'customer',
                     'is_active' => true,
@@ -53,13 +53,13 @@ class TestOrderPage extends Command
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
                 'customer_name' => 'Test Customer',
-                'customer_email' => 'test@example.com',
+                'customer_email' => 'test@iptv2smartv.com',
                 'amount' => 29.99,
                 'status' => 'paid_pending_validation',
                 'payment_id' => 'PAYPAL-TEST-' . strtoupper(uniqid()),
                 'payment_details' => [
                     'payer' => [
-                        'email_address' => 'test@example.com',
+                        'email_address' => 'test@iptv2smartv.com',
                         'name' => [
                             'given_name' => 'Test',
                             'surname' => 'Customer'

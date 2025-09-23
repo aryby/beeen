@@ -91,7 +91,7 @@ L'admin peut valider manuellement les commandes PayPal :
 3. Cliquer "Test Modal Abonnement"
 4. Remplir : 
    - Nom : "Test User"
-   - Email : "test@example.com"
+   - Email : "test@iptv2smartv.com"
    - Accepter conditions
 5. Cliquer "Payer avec PayPal"
 6. Observer les logs en temps réel

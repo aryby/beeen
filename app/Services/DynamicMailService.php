@@ -55,6 +55,17 @@ class DynamicMailService
         $contactEmail = Setting::get('mail_from_address', Setting::get('contact_email', 'support@iptv2smartv.com'));
         $siteName = Setting::get('mail_from_name', Setting::get('site_name', 'IPTV Pro'));
 
+        // Align from domain with SMTP username to avoid 550 rejections
+        try {
+            $smtpUserDomain = str_contains($smtpUsername, '@') ? substr(strrchr($smtpUsername, '@'), 1) : null;
+            $fromDomain = str_contains($contactEmail, '@') ? substr(strrchr($contactEmail, '@'), 1) : null;
+            if ($smtpUserDomain && $fromDomain && strtolower($smtpUserDomain) !== strtolower($fromDomain)) {
+                $contactEmail = $smtpUsername;
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         // Vérifier si SMTP est configuré
         if (empty($smtpHost) || empty($smtpUsername) || empty($smtpPassword)) {
             return false;

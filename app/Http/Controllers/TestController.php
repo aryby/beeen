@@ -31,8 +31,9 @@ class TestController extends Controller
             'paypal_client_secret' => Setting::get('paypal_client_secret') ? '***configured***' : null,
             'paypal_sandbox' => Setting::get('paypal_sandbox'),
         ];
+        $defaultTestEmail = auth()->check() ? auth()->user()->email : (Setting::get('smtp_username') ?: '');
         
-        return view('test.index', compact('smtpConfigured', 'paypalConfigured', 'settings'));
+        return view('test.index', compact('smtpConfigured', 'paypalConfigured', 'settings', 'defaultTestEmail'));
     }
     
     /**
@@ -41,7 +42,16 @@ class TestController extends Controller
     public function testEmail(Request $request)
     {
         try {
-            $email = $request->input('email', 'test@example.com');
+            $email = $request->input('email');
+            if (empty($email)) {
+                $email = auth()->check() ? auth()->user()->email : (Setting::get('smtp_username') ?: null);
+            }
+            if (empty($email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Veuillez renseigner une adresse email de test"
+                ], 422);
+            }
             
             // Corps HTML de test (pour activer le tracking)
             $html = '<!DOCTYPE html><html><body><h1>Test Email</h1><p>Ceci est un test SMTP + tracking.</p><p><a href="https://iptv2smartv.com">Visiter le site</a></p></body></html>';

@@ -82,7 +82,7 @@ class ContactController extends Controller
 
         // Envoyer l'email de notification aux admins
         try {
-            $contactEmail = Setting::get('contact_email', 'contact@example.com');
+            $contactEmail = Setting::get('contact_email', 'contact@iptv2smartv.com');
             Mail::to($contactEmail)->send(new ContactMessage($message));
             
             // Envoyer une copie au client

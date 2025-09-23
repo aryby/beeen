@@ -984,7 +984,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="m3u_url" class="form-label">URL M3U</label>
-                        <input type="url" class="form-control" id="m3u_url" name="m3u_url" placeholder="https://example.com/playlist.m3u" required>
+                        <input type="url" class="form-control" id="m3u_url" name="m3u_url" placeholder="https://iptv2smartv.com/playlist.m3u" required>
                         <div class="form-text">Entrez l'URL complète du fichier M3U pour extraire les identifiants.</div>
                     </div>
                     <div class="alert alert-info">

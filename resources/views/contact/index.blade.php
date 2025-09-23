@@ -254,7 +254,7 @@
                         </div>
                         <div>
                             <div class="fw-bold">Email</div>
-                            <small class="text-muted">{{ App\Models\Setting::get('contact_email', 'contact@example.com') }}</small>
+                            <small class="text-muted">{{ App\Models\Setting::get('contact_email', 'contact@iptv2smartv.com') }}</small>
                         </div>
                     </div>
                     

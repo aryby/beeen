@@ -41,7 +41,7 @@ http://localhost:8000/admin/messages/2
 ## Messages de test disponibles
 
 Il y a actuellement **2 messages** en base de données :
-- Message #1 : Test User (test@example.com)
+- Message #1 : Test User (test@iptv2smartv.com)
 - Message #2 : Test Web (test@web.com)
 
 ## Routes disponibles

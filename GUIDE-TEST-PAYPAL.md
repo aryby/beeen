@@ -87,12 +87,12 @@
 ## 💳 **Comptes Test PayPal Sandbox**
 
 ### 🛒 **Pour Tester les Achats**
-- **Email** : `sb-buyer@example.com`
+- **Email** : `sb-buyer@iptv2smartv.com`
 - **Password** : `testpassword`
 - **Type** : Compte acheteur
 
 ### 💰 **Pour Tester les Remboursements**
-- **Email** : `sb-merchant@example.com`
+- **Email** : `sb-merchant@iptv2smartv.com`
 - **Password** : `testpassword`
 - **Type** : Compte marchand
 
