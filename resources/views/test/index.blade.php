@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.soft-ui')
 
 @section('title', 'Test des Configurations')
 

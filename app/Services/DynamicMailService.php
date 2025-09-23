@@ -52,7 +52,7 @@ class DynamicMailService
         $smtpUsername = Setting::get('smtp_username');
         $smtpPassword = Setting::get('smtp_password');
         $smtpEncryption = Setting::get('smtp_encryption');
-        $contactEmail = Setting::get('mail_from_address', Setting::get('contact_email', 'hello@example.com'));
+        $contactEmail = Setting::get('mail_from_address', Setting::get('contact_email', 'support@iptv2smartv.com'));
         $siteName = Setting::get('mail_from_name', Setting::get('site_name', 'IPTV Pro'));
 
         // Vérifier si SMTP est configuré

@@ -74,7 +74,7 @@ class Setting extends Model
             'smtp_username' => ['value' => '', 'type' => 'text', 'description' => 'Nom d\'utilisateur SMTP'],
             'smtp_password' => ['value' => '', 'type' => 'text', 'description' => 'Mot de passe SMTP'],
             'smtp_encryption' => ['value' => 'tls', 'type' => 'text', 'description' => 'Chiffrement SMTP'],
-            'mail_from_address' => ['value' => 'hello@example.com', 'type' => 'text', 'description' => 'Adresse email expéditeur'],
+            'mail_from_address' => ['value' => 'support@iptv2smartv.com', 'type' => 'text', 'description' => 'Adresse email expéditeur'],
             'mail_from_name' => ['value' => 'IPTV Pro', 'type' => 'text', 'description' => 'Nom expéditeur email'],
             
             // PayPal Configuration
