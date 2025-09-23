@@ -103,7 +103,7 @@ class PayPalService
                     'application_context' => [
                         'return_url' => $returnUrl,
                         'cancel_url' => $cancelUrl,
-                        'brand_name' => config('app.name', 'IPTV Pro'),
+                        'brand_name' => config('app.name', 'Smart App'),
                         'landing_page' => 'BILLING',
                         'user_action' => 'PAY_NOW'
                     ]

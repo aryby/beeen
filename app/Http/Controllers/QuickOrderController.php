@@ -218,7 +218,21 @@ class QuickOrderController extends Controller
             $reseller->addCredits($pack->credits, "Achat pack {$pack->name} (simulation)", $pack->price);
             $order->user->update(['role' => 'reseller']);
             $order->update(['status' => 'paid']); // Validation automatique pour packs
-            
+            // Envoyer email de confirmation de commande (sans code IPTV)
+            try {
+                $mailSent = DynamicMailService::send(
+                    $order->customer_email,
+                    new \App\Mail\OrderPendingValidation($order)
+                );
+                
+                if ($mailSent) {
+                    \Log::info('Order pending validation email sent successfully');
+                } else {
+                    \Log::warning('Failed to send order pending validation email for order: ' . $order->id);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Email error in simulation: ' . $e->getMessage());
+            }
             $redirectUrl = route('reseller.dashboard');
         } else {
             // Pour les abonnements, attendre validation admin

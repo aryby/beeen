@@ -102,7 +102,7 @@ class SubscriptionController extends Controller
             $result = $paypalService->createPayment(
                 $order->amount,
                 $order->currency,
-                "Abonnement IPTV {$order->subscription->name} - {$order->order_number}",
+                "Abonnement {$order->subscription->name} - {$order->order_number}",
                 route('payment.success', ['order' => $order->id, 'token' => '__TOKEN__']),
                 route('payment.cancel', ['order' => $order->id])
             );
