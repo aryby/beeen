@@ -471,6 +471,10 @@
                 <i class="bi bi-chat-quote"></i>
                 Témoignages
             </a>
+            <a href="{{ route('admin.email-logs.index') }}" class="nav-link {{ request()->routeIs('admin.email-logs.*') ? 'active' : '' }}">
+                <i class="bi bi-mailbox"></i>
+                Email Logs
+            </a>
             
             <div class="nav-section">Configuration</div>
             <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
