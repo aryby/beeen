@@ -20,29 +20,41 @@ class TrackedMailService
         try {
             DynamicConfigService::configureSmtp();
 
-            $emailLog = EmailLog::create([
-                'subject' => $subject,
-                'body' => $htmlBody,
-                'sent_by' => $sentByUserId,
-                'total_sent' => 0,
-                'preview' => \Str::limit(strip_tags($htmlBody), 100),
-                'recipients' => [$toEmail],
-            ]);
+            $emailLog = null;
+            $token = null;
+            $personalizedBody = $htmlBody;
 
-            $token = (string) Str::uuid();
-            $tracking = EmailTracking::create([
-                'email_log_id' => $emailLog->id,
-                'recipient' => $toEmail,
-                'token' => $token,
-            ]);
+            try {
+                $emailLog = EmailLog::create([
+                    'subject' => $subject,
+                    'body' => $htmlBody,
+                    'sent_by' => $sentByUserId,
+                    'total_sent' => 0,
+                    'preview' => \Str::limit(strip_tags($htmlBody), 100),
+                    'recipients' => [$toEmail],
+                ]);
 
-            $personalizedBody = self::injectTracking($htmlBody, $token);
+                $token = (string) Str::uuid();
+                EmailTracking::create([
+                    'email_log_id' => $emailLog->id,
+                    'recipient' => $toEmail,
+                    'token' => $token,
+                ]);
+
+                $personalizedBody = self::injectTracking($htmlBody, $token);
+            } catch (\Throwable $trackingError) {
+                Log::error('Tracked mail logging error: ' . $trackingError->getMessage());
+                // Continue without tracking to ensure delivery
+                $personalizedBody = $htmlBody;
+            }
 
             Mail::html($personalizedBody, function (Message $message) use ($toEmail, $subject) {
                 $message->to($toEmail)->subject($subject);
             });
 
-            $emailLog->update(['total_sent' => 1]);
+            if ($emailLog) {
+                try { $emailLog->update(['total_sent' => 1]); } catch (\Throwable $e) { /* ignore */ }
+            }
             return true;
         } catch (\Exception $e) {
             Log::error('Tracked mail send error: ' . $e->getMessage());
@@ -86,23 +98,32 @@ class TrackedMailService
 
             $htmlBody = $mailable->render();
 
-            $emailLog = EmailLog::create([
-                'subject' => $subject ?: '',
-                'body' => $htmlBody,
-                'sent_by' => $sentByUserId,
-                'total_sent' => 0,
-                'preview' => \Str::limit(strip_tags($htmlBody), 100),
-                'recipients' => [$toEmail],
-            ]);
+            $emailLog = null;
+            $token = null;
+            $personalizedBody = $htmlBody;
 
-            $token = (string) Str::uuid();
-            EmailTracking::create([
-                'email_log_id' => $emailLog->id,
-                'recipient' => $toEmail,
-                'token' => $token,
-            ]);
+            try {
+                $emailLog = EmailLog::create([
+                    'subject' => $subject ?: '',
+                    'body' => $htmlBody,
+                    'sent_by' => $sentByUserId,
+                    'total_sent' => 0,
+                    'preview' => \Str::limit(strip_tags($htmlBody), 100),
+                    'recipients' => [$toEmail],
+                ]);
 
-            $personalizedBody = self::injectTracking($htmlBody, $token);
+                $token = (string) Str::uuid();
+                EmailTracking::create([
+                    'email_log_id' => $emailLog->id,
+                    'recipient' => $toEmail,
+                    'token' => $token,
+                ]);
+
+                $personalizedBody = self::injectTracking($htmlBody, $token);
+            } catch (\Throwable $trackingError) {
+                Log::error('Tracked mailable logging error: ' . $trackingError->getMessage());
+                $personalizedBody = $htmlBody; // send without tracking
+            }
 
             Mail::html($personalizedBody, function (Message $message) use ($toEmail, $subject) {
                 if (!empty($subject)) {
@@ -111,7 +132,9 @@ class TrackedMailService
                 $message->to($toEmail);
             });
 
-            $emailLog->update(['total_sent' => 1]);
+            if ($emailLog) {
+                try { $emailLog->update(['total_sent' => 1]); } catch (\Throwable $e) { /* ignore */ }
+            }
             return true;
         } catch (\Exception $e) {
             Log::error('Tracked mailable send error: ' . $e->getMessage());
