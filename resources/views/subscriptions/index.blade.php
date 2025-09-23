@@ -17,7 +17,7 @@
                                 <div class="feature-icon success mb-2 mx-auto">
                                     <i class="bi bi-tv fs-3"></i>
                                 </div>
-                                <div class="fw-bold">1000+ Chaînes</div>
+                                <div class="fw-bold">12000+ Chaînes</div>
                             </div>
                         </div>
                         <div class="col-6 col-md-3 mb-3">
@@ -117,7 +117,7 @@
                                 <ul class="list-unstyled mb-4">
                                     <li class="mb-2 d-flex align-items-center">
                                         <i class="bi bi-check-circle text-success me-2"></i>
-                                        <span><strong>1000+</strong> Chaînes HD/4K</span>
+                                        <span><strong>12000+</strong> Chaînes HD/4K</span>
                                     </li>
                                     <li class="mb-2 d-flex align-items-center">
                                         <i class="bi bi-check-circle text-success me-2"></i>

@@ -31,7 +31,7 @@
                                     <div class="feature-icon success mb-2 mx-auto tv-glow">
                                         <i class="bi bi-tv fs-3"></i>
                                     </div>
-                                    <div class="fw-bold">1000+</div>
+                                    <div class="fw-bold">12000+</div>
                                     <small class="opacity-75">Chaînes HD</small>
                                 </div>
                             </div>
@@ -183,7 +183,7 @@
                             <ul class="list-unstyled mb-4">
                                 <li class="mb-2 d-flex align-items-center">
                                     <i class="bi bi-check-circle text-success me-2"></i>
-                                    <span><strong>1000+</strong> Chaînes HD/4K</span>
+                                    <span><strong>12000+</strong> Chaînes HD/4K</span>
                                 </li>
                                 <li class="mb-2 d-flex align-items-center">
                                     <i class="bi bi-check-circle text-success me-2"></i>
@@ -310,7 +310,7 @@
                     <div class="feature-icon success mx-auto mb-3">
                         <i class="bi bi-tv fs-2"></i>
                     </div>
-                    <h3 class="fw-bold mb-1" style="color: var(--soft-dark);">1000+</h3>
+                    <h3 class="fw-bold mb-1" style="color: var(--soft-dark);">12000+</h3>
                     <p class="text-muted mb-0">Chaînes disponibles</p>
                 </div>
             </div>

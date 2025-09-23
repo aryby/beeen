@@ -56,7 +56,7 @@ Contacter le support
 
 ## ✨ Ce qui est inclus dans votre abonnement
 
-- ✅ **1000+** chaînes HD/4K
+- ✅ **12000+** chaînes HD/4K
 - ✅ **VOD** illimité
 - ✅ **Sans** publicité
 - ✅ **Multi-appareils** (3 simultanés)
