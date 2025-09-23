@@ -100,6 +100,9 @@ Route::middleware('auth')->group(function () {
 // Routes d'administration
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Email Logs
+    Route::get('/email-logs', [App\Http\Controllers\Admin\EmailLogController::class, 'index'])->name('email-logs.index');
+    Route::get('/email-logs/{emailLog}', [App\Http\Controllers\Admin\EmailLogController::class, 'show'])->name('email-logs.show');
     
     // Gestion des abonnements
     Route::resource('subscriptions', App\Http\Controllers\Admin\SubscriptionController::class);

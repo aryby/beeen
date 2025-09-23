@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\Setting;
 use App\Mail\ContactMessage;
 use Illuminate\Support\Facades\Mail;
+use App\Services\TrackedMailService;
 
 class ContactController extends Controller
 {
@@ -80,13 +81,15 @@ class ContactController extends Controller
             'status' => 'open',
         ]);
 
-        // Envoyer l'email de notification aux admins
+        // Envoyer l'email de notification aux admins (tracked)
         try {
             $contactEmail = Setting::get('contact_email', 'contact@iptv2smartv.com');
-            Mail::to($contactEmail)->send(new ContactMessage($message));
+            $adminHtml = view('emails.contact-admin', ['message' => $message])->render();
+            TrackedMailService::sendTracked($contactEmail, 'Nouveau message de contact', $adminHtml, auth()->id());
             
-            // Envoyer une copie au client
-            Mail::to($message->email)->send(new \App\Mail\ContactConfirmation($message));
+            // Envoyer une copie au client (tracked)
+            $clientHtml = view('emails.contact-confirmation', ['message' => $message])->render();
+            TrackedMailService::sendTracked($message->email, 'Confirmation de votre message', $clientHtml, auth()->id());
         } catch (\Exception $e) {
             // Log l'erreur mais ne pas faire échouer la création du message
             logger()->error('Erreur envoi email contact: ' . $e->getMessage());
