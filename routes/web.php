@@ -8,6 +8,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ResellerController;
 use App\Http\Controllers\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TrackingController;
 
 // Routes publiques
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -34,6 +35,10 @@ Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess']
 Route::get('/payment/pending', [SubscriptionController::class, 'paymentPending'])->name('payment.pending');
 Route::get('/payment/cancel', [SubscriptionController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/payment/webhook', [SubscriptionController::class, 'paymentWebhook'])->name('payment.webhook');
+
+// Email tracking endpoints (public)
+Route::get('/t/o/{token}.png', [TrackingController::class, 'open'])->name('track.open');
+Route::get('/t/c/{token}', [TrackingController::class, 'click'])->name('track.click');
 
 // Routes des tutoriels
 Route::get('/tutorials', [TutorialController::class, 'index'])->name('tutorials.index');
