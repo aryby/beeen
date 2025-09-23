@@ -11,6 +11,7 @@ use App\Models\Reseller;
 use App\Services\PayPalService;
 use App\Services\DynamicConfigService;
 use App\Services\DynamicMailService;
+use App\Services\TrackedMailService;
 use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 
@@ -191,9 +192,10 @@ class SubscriptionController extends Controller
                     
                     // Envoyer email de confirmation pour pack revendeur
                     try {
-                        $mailSent = DynamicMailService::send(
+                        $mailSent = TrackedMailService::sendTrackedMailable(
                             $order->customer_email,
-                            new \App\Mail\OrderConfirmation($order)
+                            new \App\Mail\OrderConfirmation($order),
+                            $order->user_id
                         );
                         
                         if ($mailSent) {
@@ -219,9 +221,10 @@ class SubscriptionController extends Controller
         // Envoyer l'email de confirmation avec les identifiants IPTV (pour abonnements normaux)
         if ($order->subscription_id) {
             try {
-                $mailSent = DynamicMailService::send(
+                $mailSent = TrackedMailService::sendTrackedMailable(
                     $order->customer_email,
-                    new \App\Mail\OrderConfirmation($order)
+                    new \App\Mail\OrderConfirmation($order),
+                    $order->user_id
                 );
                 
                 if ($mailSent) {
