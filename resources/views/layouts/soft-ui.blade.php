@@ -645,7 +645,7 @@
                             <h5 class="mb-0">{{ config('app.name', 'IPTV Pro') }}</h5>
                         </div>
                         <p class="mb-3 opacity-75">
-                            Votre service IPTV de confiance avec plus de 1000 chaînes HD, VOD illimité et support 24/7.
+                            Votre service IPTV de confiance avec plus de 12000 chaînes HD, VOD illimité et support 24/7.
                         </p>
                         <div class="d-flex gap-3">
                             <a href="#" class="text-white opacity-75 hover-lift">

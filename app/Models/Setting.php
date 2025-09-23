@@ -84,7 +84,7 @@ class Setting extends Model
             
             // Site Configuration
             'site_name' => ['value' => 'IPTV Pro', 'type' => 'text', 'description' => 'Nom du site'],
-            'subscription_description' => ['value' => 'Accédez à plus de 1000 chaînes HD, VOD illimité, sans publicité avec support 24/7.', 'type' => 'text', 'description' => 'Description commune des abonnements'],
+            'subscription_description' => ['value' => 'Accédez à plus de 12000 chaînes HD, VOD illimité, sans publicité avec support 24/7.', 'type' => 'text', 'description' => 'Description commune des abonnements'],
             'contact_email' => ['value' => 'contact@iptv2smartv.com', 'type' => 'text', 'description' => 'Email de contact'],
             
             // reCAPTCHA

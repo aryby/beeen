@@ -25,7 +25,7 @@ class SubscriptionController extends Controller
             ->get();
 
         $subscriptionDescription = Setting::get('subscription_description', 
-            'Accédez à plus de 1000 chaînes HD, VOD illimité, sans publicité avec support 24/7.'
+            'Accédez à plus de 12000 chaînes HD, VOD illimité, sans publicité avec support 24/7.'
         );
 
         return view('subscriptions.index', compact('subscriptions', 'subscriptionDescription'));

@@ -22,12 +22,7 @@ Route::post('/checkout/{subscription}', [SubscriptionController::class, 'process
 // Commande rapide pour visiteurs
 Route::post('/quick-order', [App\Http\Controllers\QuickOrderController::class, 'store'])->name('quick-order.store');
 
-// Test PayPal (temporaire)
-Route::get('/test-paypal', [App\Http\Controllers\TestPayPalController::class, 'testConnection'])->name('test.paypal');
-Route::get('/test-paypal-page', [App\Http\Controllers\TestPayPalController::class, 'testPage'])->name('test.paypal.page');
-Route::get('/test-modal', function() { return view('test-modal'); })->name('test.modal');
-Route::get('/test-success', function() { return 'Test Success'; });
-Route::get('/test-cancel', function() { return 'Test Cancel'; });
+
 
 
 // Paiements
@@ -82,7 +77,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/test/email', [App\Http\Controllers\TestController::class, 'testEmail'])->name('test.email');
     Route::get('/test/paypal', [App\Http\Controllers\TestController::class, 'testPayPal'])->name('test.paypal');
     Route::post('/test/paypal-capture', [App\Http\Controllers\TestController::class, 'testPayPalCapture'])->name('test.paypal.capture');
-    
+    // Test PayPal (temporaire)
+Route::get('/test-paypal', [App\Http\Controllers\TestPayPalController::class, 'testConnection'])->name('test.paypal');
+Route::get('/test-paypal-page', [App\Http\Controllers\TestPayPalController::class, 'testPage'])->name('test.paypal.page');
+Route::get('/test-modal', function() { return view('test-modal'); })->name('test.modal');
+Route::get('/test-success', function() { return 'Test Success'; });
+Route::get('/test-cancel', function() { return 'Test Cancel'; });
     // Dashboard client
     Route::get('/customer/dashboard', [ProfileController::class, 'customerDashboard'])
         ->middleware('role:customer')

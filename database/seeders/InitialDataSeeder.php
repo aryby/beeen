@@ -39,7 +39,7 @@ class InitialDataSeeder extends Seeder
 
         foreach ($subscriptions as $sub) {
             Subscription::create(array_merge($sub, [
-                'description' => 'Accès complet à plus de 1000 chaînes HD, VOD illimité, sans publicité avec support 24/7.',
+                'description' => 'Accès complet à plus de 12000 chaînes HD, VOD illimité, sans publicité avec support 24/7.',
                 'is_active' => true,
             ]));
         }
