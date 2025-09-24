@@ -215,7 +215,7 @@
                                     <div class="col-6">
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-check-circle text-success me-2"></i>
-                                            <small>1000+ chaînes HD/4K</small>
+                                            <small>12000+ chaînes HD/4K</small>
                                         </div>
                                     </div>
                                     <div class="col-6">

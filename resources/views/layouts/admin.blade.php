@@ -467,9 +467,13 @@
                     <span class="badge badge-soft bg-warning ms-auto">{{ App\Models\Message::unread()->count() }}</span>
                 @endif
             </a>
-            <a href="#" class="nav-link">
+            <a href="{{ route('admin.testimonials.index') }}" class="nav-link {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }}">
                 <i class="bi bi-chat-quote"></i>
                 Témoignages
+            </a>
+            <a href="{{ route('admin.email-logs.index') }}" class="nav-link {{ request()->routeIs('admin.email-logs.*') ? 'active' : '' }}">
+                <i class="bi bi-mailbox"></i>
+                Email Logs
             </a>
             
             <div class="nav-section">Configuration</div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Services\TrackedMailService;
 
 class MessageController extends Controller
 {
@@ -46,8 +47,12 @@ class MessageController extends Controller
             'reply_message' => 'required|string|max:2000',
         ]);
 
-        // TODO: Envoyer la réponse par email
-        // Mail::to($message->email)->send(new MessageReply($message, $validated['reply_message']));
+        // Envoyer la réponse par email (tracked)
+        $html = view('emails.message-reply', [
+            'messageModel' => $message,
+            'reply' => $validated['reply_message']
+        ])->render();
+        TrackedMailService::sendTracked($message->email, 'Réponse à votre message', $html, auth()->id());
 
         $message->update([
             'status' => 'resolved',

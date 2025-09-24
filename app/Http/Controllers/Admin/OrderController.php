@@ -10,6 +10,7 @@ use App\Services\M3UExtractorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\TrackedMailService;
 
 class OrderController extends Controller
 {
@@ -137,10 +138,15 @@ class OrderController extends Controller
                 'type' => 'order_update',
             ]);
 
-            // Envoyer l'email de confirmation personnalisé
+            // Envoyer l'email de confirmation personnalisé (tracked)
             try {
-                Mail::to($order->customer_email)->sendNow(new \App\Mail\OrderConfirmation($order, $customMessage));
-                $adminMessage->markAsSent();
+                $sent = TrackedMailService::sendTrackedMailable(
+                    $order->customer_email,
+                    new \App\Mail\OrderConfirmation($order, $customMessage),
+                    $order->user_id
+                );
+                if ($sent) { $adminMessage->markAsSent(); }
+                else { $adminMessage->markAsFailed('sendTrackedMailable returned false'); }
             } catch (\Exception $e) {
                 logger()->error('Erreur envoi email validation personnalisée: ' . $e->getMessage());
                 $adminMessage->markAsFailed($e->getMessage());
@@ -200,8 +206,12 @@ class OrderController extends Controller
             $m3uService = new M3UExtractorService();
             $order = $m3uService->generateForOrder($order);
 
-            // Envoyer l'email avec les détails M3U
-            Mail::to($order->customer_email)->send(new \App\Mail\OrderM3UDetails($order));
+            // Envoyer l'email avec les détails M3U (tracked)
+            TrackedMailService::sendTrackedMailable(
+                $order->customer_email,
+                new \App\Mail\OrderM3UDetails($order),
+                $order->user_id
+            );
 
             return redirect()->back()
                 ->with('success', 'Identifiants M3U générés et email envoyé avec succès !');
@@ -253,8 +263,12 @@ class OrderController extends Controller
                 'm3u_generated_at' => now(),
             ]);
 
-            // Envoyer l'email avec les détails M3U
-            Mail::to($order->customer_email)->send(new \App\Mail\OrderM3UDetails($order));
+            // Envoyer l'email avec les détails M3U (tracked)
+            TrackedMailService::sendTrackedMailable(
+                $order->customer_email,
+                new \App\Mail\OrderM3UDetails($order),
+                $order->user_id
+            );
 
             return redirect()->back()
                 ->with('success', 'Identifiants M3U extraits et email envoyé avec succès !');
@@ -519,9 +533,13 @@ class OrderController extends Controller
             ])
         ]);
 
-        // Envoyer email de confirmation de remboursement
+        // Envoyer email de confirmation de remboursement (tracked)
         try {
-            Mail::to($order->customer_email)->send(new \App\Mail\OrderRefunded($order));
+            TrackedMailService::sendTrackedMailable(
+                $order->customer_email,
+                new \App\Mail\OrderRefunded($order),
+                $order->user_id
+            );
         } catch (\Exception $e) {
             \Log::error('Erreur envoi email remboursement: ' . $e->getMessage());
         }
@@ -621,18 +639,21 @@ class OrderController extends Controller
             'type' => $validated['type'],
         ]);
 
-        // Envoyer l'email
+        // Envoyer l'email (tracked)
         try {
-            Mail::to($order->customer_email)->send(new \App\Mail\AdminToCustomerMessage($adminMessage));
-            $adminMessage->markAsSent();
-            
-            return redirect()->back()
-                ->with('success', 'Message envoyé avec succès au client.');
+            $sent = TrackedMailService::sendTrackedMailable(
+                $order->customer_email,
+                new \App\Mail\AdminToCustomerMessage($adminMessage),
+                $order->user_id
+            );
+            if ($sent) {
+                $adminMessage->markAsSent();
+                return redirect()->back()->with('success', 'Message envoyé avec succès au client.');
+            }
+            return redirect()->back()->with('error', 'Envoi du message impossible (voir logs).');
         } catch (\Exception $e) {
             logger()->error('Erreur envoi message admin: ' . $e->getMessage());
-            
-            return redirect()->back()
-                ->with('error', 'Erreur lors de l\'envoi du message.');
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi du message.');
         }
     }
 }

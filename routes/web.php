@@ -8,6 +8,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ResellerController;
 use App\Http\Controllers\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TrackingController;
 
 // Routes publiques
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -21,12 +22,7 @@ Route::post('/checkout/{subscription}', [SubscriptionController::class, 'process
 // Commande rapide pour visiteurs
 Route::post('/quick-order', [App\Http\Controllers\QuickOrderController::class, 'store'])->name('quick-order.store');
 
-// Test PayPal (temporaire)
-Route::get('/test-paypal', [App\Http\Controllers\TestPayPalController::class, 'testConnection'])->name('test.paypal');
-Route::get('/test-paypal-page', [App\Http\Controllers\TestPayPalController::class, 'testPage'])->name('test.paypal.page');
-Route::get('/test-modal', function() { return view('test-modal'); })->name('test.modal');
-Route::get('/test-success', function() { return 'Test Success'; });
-Route::get('/test-cancel', function() { return 'Test Cancel'; });
+
 
 
 // Paiements
@@ -34,6 +30,10 @@ Route::get('/payment/success', [SubscriptionController::class, 'paymentSuccess']
 Route::get('/payment/pending', [SubscriptionController::class, 'paymentPending'])->name('payment.pending');
 Route::get('/payment/cancel', [SubscriptionController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/payment/webhook', [SubscriptionController::class, 'paymentWebhook'])->name('payment.webhook');
+
+// Email tracking endpoints (public)
+Route::get('/t/o/{token}.png', [TrackingController::class, 'open'])->name('track.open');
+Route::get('/t/c/{token}', [TrackingController::class, 'click'])->name('track.click');
 
 // Routes des tutoriels
 Route::get('/tutorials', [TutorialController::class, 'index'])->name('tutorials.index');
@@ -77,7 +77,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/test/email', [App\Http\Controllers\TestController::class, 'testEmail'])->name('test.email');
     Route::get('/test/paypal', [App\Http\Controllers\TestController::class, 'testPayPal'])->name('test.paypal');
     Route::post('/test/paypal-capture', [App\Http\Controllers\TestController::class, 'testPayPalCapture'])->name('test.paypal.capture');
-    
+    // Test PayPal (temporaire)
+Route::get('/test-paypal', [App\Http\Controllers\TestPayPalController::class, 'testConnection'])->name('test.paypal');
+Route::get('/test-paypal-page', [App\Http\Controllers\TestPayPalController::class, 'testPage'])->name('test.paypal.page');
+Route::get('/test-modal', function() { return view('test-modal'); })->name('test.modal');
+Route::get('/test-success', function() { return 'Test Success'; });
+Route::get('/test-cancel', function() { return 'Test Cancel'; });
     // Dashboard client
     Route::get('/customer/dashboard', [ProfileController::class, 'customerDashboard'])
         ->middleware('role:customer')
@@ -95,6 +100,9 @@ Route::middleware('auth')->group(function () {
 // Routes d'administration
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Email Logs
+    Route::get('/email-logs', [App\Http\Controllers\Admin\EmailLogController::class, 'index'])->name('email-logs.index');
+    Route::get('/email-logs/{emailLog}', [App\Http\Controllers\Admin\EmailLogController::class, 'show'])->name('email-logs.show');
     
     // Gestion des abonnements
     Route::resource('subscriptions', App\Http\Controllers\Admin\SubscriptionController::class);

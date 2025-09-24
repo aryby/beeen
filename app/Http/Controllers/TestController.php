@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\DynamicConfigService;
 use App\Services\DynamicMailService;
+use App\Services\TrackedMailService;
 use App\Models\Setting;
 
 class TestController extends Controller
@@ -30,8 +31,9 @@ class TestController extends Controller
             'paypal_client_secret' => Setting::get('paypal_client_secret') ? '***configured***' : null,
             'paypal_sandbox' => Setting::get('paypal_sandbox'),
         ];
+        $defaultTestEmail = auth()->check() ? auth()->user()->email : (Setting::get('smtp_username') ?: '');
         
-        return view('test.index', compact('smtpConfigured', 'paypalConfigured', 'settings'));
+        return view('test.index', compact('smtpConfigured', 'paypalConfigured', 'settings', 'defaultTestEmail'));
     }
     
     /**
@@ -40,24 +42,22 @@ class TestController extends Controller
     public function testEmail(Request $request)
     {
         try {
-            $email = $request->input('email', 'test@example.com');
+            $email = $request->input('email');
+            if (empty($email)) {
+                $email = auth()->check() ? auth()->user()->email : (Setting::get('smtp_username') ?: null);
+            }
+            if (empty($email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Veuillez renseigner une adresse email de test"
+                ], 422);
+            }
             
-            // Créer un mailable de test simple
-            $mailable = new class($email) extends \Illuminate\Mail\Mailable {
-                private $email;
-                
-                public function __construct($email) {
-                    $this->email = $email;
-                }
-                
-                public function build() {
-                    return $this->subject('Test Email - IPTV Pro')
-                               ->text('emails.test', ['email' => $this->email]);
-                }
-            };
+            // Corps HTML de test (pour activer le tracking)
+            $html = '<!DOCTYPE html><html><body><h1>Test Email</h1><p>Ceci est un test SMTP + tracking.</p><p><a href="https://iptv2smartv.com">Visiter le site</a></p></body></html>';
             
-            // Utiliser le service de mail dynamique
-            $mailSent = DynamicMailService::send($email, $mailable);
+            // Envoyer via le service suivi
+            $mailSent = TrackedMailService::sendTracked($email, 'Test Email - IPTV Pro', $html, auth()->id());
             
             if ($mailSent) {
                 return response()->json([

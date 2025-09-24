@@ -13,6 +13,7 @@ use App\Services\PayPalService;
 use App\Services\PayPalServiceAlternative;
 use App\Services\DynamicConfigService;
 use App\Services\DynamicMailService;
+use App\Services\TrackedMailService;
 use App\Traits\PayPalDetailsExtractor;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -220,9 +221,10 @@ class QuickOrderController extends Controller
             $order->update(['status' => 'paid']); // Validation automatique pour packs
             // Envoyer email de confirmation de commande (sans code IPTV)
             try {
-                $mailSent = DynamicMailService::send(
+                $mailSent = TrackedMailService::sendTrackedMailable(
                     $order->customer_email,
-                    new \App\Mail\OrderPendingValidation($order)
+                    new \App\Mail\OrderPendingValidation($order),
+                    $order->user_id
                 );
                 
                 if ($mailSent) {
@@ -240,9 +242,10 @@ class QuickOrderController extends Controller
             
             // Envoyer email de confirmation de commande (sans code IPTV)
             try {
-                $mailSent = DynamicMailService::send(
+                $mailSent = TrackedMailService::sendTrackedMailable(
                     $order->customer_email,
-                    new \App\Mail\OrderPendingValidation($order)
+                    new \App\Mail\OrderPendingValidation($order),
+                    $order->user_id
                 );
                 
                 if ($mailSent) {
@@ -328,9 +331,10 @@ class QuickOrderController extends Controller
                 
                 // Envoyer l'email de confirmation
                 try {
-                    $mailSent = DynamicMailService::send(
+                    $mailSent = TrackedMailService::sendTrackedMailable(
                         $order->customer_email,
-                        new \App\Mail\OrderConfirmation($order)
+                        new \App\Mail\OrderConfirmation($order),
+                        $order->user_id
                     );
                     
                     if ($mailSent) {

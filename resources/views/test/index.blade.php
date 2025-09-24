@@ -71,8 +71,8 @@
                                     <h5 class="card-title">Test Email</h5>
                                     <p class="card-text">Tester l'envoi d'un email avec la configuration SMTP actuelle.</p>
                                     <div class="input-group mb-3">
-                                        <input type="email" class="form-control" id="testEmail" placeholder="email@example.com" value="test@example.com">
-                                        <button class="btn btn-primary" onclick="testEmail()">
+                                        <input type="email" class="form-control" id="testEmail" placeholder="email@iptv2smartv.com" value="{{ $defaultTestEmail ?? '' }}">
+                                        <button class="btn btn-primary" onclick="testEmail(event)">
                                             <i class="bi bi-send me-1"></i>Envoyer
                                         </button>
                                     </div>
@@ -84,13 +84,13 @@
                                 <div class="card-body">
                                     <h5 class="card-title">Test PayPal</h5>
                                     <p class="card-text">Tester la connexion à l'API PayPal.</p>
-                                    <button class="btn btn-primary" onclick="testPayPal()">
+                                    <button class="btn btn-primary" onclick="testPayPal(event)">
                                         <i class="bi bi-paypal me-1"></i>Tester PayPal
                                     </button>
                                     <hr>
                                     <div class="input-group mb-3">
                                         <input type="text" class="form-control" id="testPayPalOrderId" placeholder="Order ID PayPal" value="">
-                                        <button class="btn btn-warning" onclick="testPayPalCapture()">
+                                        <button class="btn btn-warning" onclick="testPayPalCapture(event)">
                                             <i class="bi bi-capture me-1"></i>Test Capture
                                         </button>
                                     </div>
@@ -174,7 +174,12 @@
 
 @push('scripts')
 <script>
-function testEmail() {
+function showToast(message, type) {
+    // Minimal fallback if global toast not present
+    alert(message);
+}
+
+function testEmail(event) {
     const email = document.getElementById('testEmail').value;
     
     if (!email) {
@@ -188,58 +193,53 @@ function testEmail() {
     button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Envoi...';
     button.disabled = true;
     
-    $.ajax({
-        url: '{{ route("test.email") }}',
+    fetch('{{ route('test.email') }}', {
         method: 'POST',
-        data: {
-            email: email,
-            _token: '{{ csrf_token() }}'
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        success: function(response) {
-            if (response.success) {
-                showToast(response.message, 'success');
-            } else {
-                showToast(response.message, 'error');
-            }
-        },
-        error: function(xhr) {
-            showToast('Erreur lors du test email', 'error');
-        },
-        complete: function() {
-            button.innerHTML = originalText;
-            button.disabled = false;
+        body: JSON.stringify({ email })
+    })
+    .then(r => r.json())
+    .then(response => {
+        if (response.success) {
+            showToast(response.message, 'success');
+        } else {
+            showToast(response.message || 'Échec de l\'envoi', 'error');
         }
+    })
+    .catch(() => showToast('Erreur lors du test email', 'error'))
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
     });
 }
 
-function testPayPal() {
+function testPayPal(event) {
     // Afficher un loading
     const button = event.target;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Test...';
     button.disabled = true;
     
-    $.ajax({
-        url: '{{ route("test.paypal") }}',
-        method: 'GET',
-        success: function(response) {
+    fetch('{{ route('test.paypal') }}')
+        .then(r => r.json())
+        .then(response => {
             if (response.success) {
                 showToast(response.message, 'success');
             } else {
-                showToast(response.message, 'error');
+                showToast(response.message || 'Erreur PayPal', 'error');
             }
-        },
-        error: function(xhr) {
-            showToast('Erreur lors du test PayPal', 'error');
-        },
-        complete: function() {
+        })
+        .catch(() => showToast('Erreur lors du test PayPal', 'error'))
+        .finally(() => {
             button.innerHTML = originalText;
             button.disabled = false;
-        }
-    });
+        });
 }
 
-function testPayPalCapture() {
+function testPayPalCapture(event) {
     const orderId = document.getElementById('testPayPalOrderId').value;
     
     if (!orderId) {
@@ -253,28 +253,27 @@ function testPayPalCapture() {
     button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Test...';
     button.disabled = true;
     
-    $.ajax({
-        url: '{{ route("test.paypal.capture") }}',
+    fetch('{{ route('test.paypal.capture') }}', {
         method: 'POST',
-        data: {
-            order_id: orderId,
-            _token: '{{ csrf_token() }}'
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        success: function(response) {
-            if (response.success) {
-                showToast(response.message, 'success');
-            } else {
-                showToast(response.message, 'error');
-                console.log('Capture details:', response.details);
-            }
-        },
-        error: function(xhr) {
-            showToast('Erreur lors du test de capture', 'error');
-        },
-        complete: function() {
-            button.innerHTML = originalText;
-            button.disabled = false;
+        body: JSON.stringify({ order_id: orderId })
+    })
+    .then(r => r.json())
+    .then(response => {
+        if (response.success) {
+            showToast(response.message, 'success');
+        } else {
+            showToast(response.message || 'Capture échouée', 'error');
+            console.log('Capture details:', response.details);
         }
+    })
+    .catch(() => showToast('Erreur lors du test de capture', 'error'))
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
     });
 }
 </script>

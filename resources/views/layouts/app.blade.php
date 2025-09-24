@@ -271,7 +271,7 @@
             <div class="row">
                 <div class="col-lg-4 mb-4">
                     <h5><i class="bi bi-tv me-2"></i>{{ config('app.name', 'IPTV Pro') }}</h5>
-                    <p class="mb-3">Votre service IPTV de confiance avec plus de 1000 chaînes HD, VOD illimité et support 24/7.</p>
+                    <p class="mb-3">Votre service IPTV de confiance avec plus de 12000 chaînes HD, VOD illimité et support 24/7.</p>
                     <div class="social-links">
                         <a href="#" class="me-3"><i class="bi bi-facebook fs-4"></i></a>
                         <a href="#" class="me-3"><i class="bi bi-twitter fs-4"></i></a>
