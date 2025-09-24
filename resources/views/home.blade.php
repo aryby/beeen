@@ -72,6 +72,13 @@
                             <a href="{{ route('tutorials.index') }}" class="btn btn-soft-outline btn-lg px-4" style="border-color: white; color: white;">
                                 <i class="bi bi-play-circle me-2"></i>Voir les tutoriels
                             </a>
+                            <button type="button" 
+                                    class="btn btn-soft btn-soft-warning btn-lg px-4"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#test48hModal">
+                                <i class="bi bi-clock me-2"></i>Test 48h - 3€
+                            </button>
+                            
                         </div>
                     </div>
                 </div>
@@ -412,6 +419,127 @@
         </div>
     </div>
 </section>
+
+<!-- Modal Test 48h -->
+<div id="test48hModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-clock me-2"></i>Test IPTV 48h - 3€
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="alert alert-info">
+                    <div class="d-flex">
+                        <i class="bi bi-info-circle text-info fs-4 me-3 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading">Testez notre service IPTV</h6>
+                            <p class="mb-0">
+                                Profitez de 48h d'accès complet pour seulement 3€. Accès à plus de 12 000 chaînes HD, VOD illimité, sans publicité.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="test48hForm">
+                    @csrf
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Nom complet *</label>
+                            <input type="text" 
+                                   id="name" 
+                                   name="name" 
+                                   required
+                                   class="form-control">
+                            <div class="text-danger small mt-1" id="name-error"></div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" 
+                                   id="email" 
+                                   name="email" 
+                                   required
+                                   class="form-control">
+                            <div class="text-danger small mt-1" id="email-error"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="device_type" class="form-label">Type d'appareil *</label>
+                        <select id="device_type" 
+                                name="device_type" 
+                                required
+                                class="form-select">
+                            <option value="">Sélectionnez votre appareil</option>
+                            <option value="smart_tv">Smart TV (Samsung, LG, Sony, etc.)</option>
+                            <option value="android">Android (Smartphone, tablette, box Android TV)</option>
+                            <option value="apple">Apple TV / iOS (iPhone, iPad, Apple TV)</option>
+                            <option value="kodi">Kodi (Application Kodi sur tous appareils)</option>
+                            <option value="mag">MAG Box (Appareil MAG)</option>
+                            <option value="pc">PC / Windows (Ordinateur Windows, Mac, Linux)</option>
+                            <option value="other">Autre</option>
+                        </select>
+                        <div class="text-danger small mt-1" id="device_type-error"></div>
+                    </div>
+
+                    <div id="mac_address_field" class="mb-3 d-none">
+                        <label for="mac_address" class="form-label">
+                            Adresse MAC * <small class="text-muted">(Obligatoire pour MAG Box)</small>
+                        </label>
+                        <input type="text" 
+                               id="mac_address" 
+                               name="mac_address" 
+                               placeholder="Ex: 00:1B:44:11:3A:B7"
+                               class="form-control">
+                        <div class="text-danger small mt-1" id="mac_address-error"></div>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            L'adresse MAC se trouve dans les paramètres réseau de votre appareil MAG.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">
+                            Notes additionnelles <small class="text-muted">(Optionnel)</small>
+                        </label>
+                        <textarea id="notes" 
+                                  name="notes" 
+                                  rows="3"
+                                  placeholder="Décrivez votre configuration ou posez une question..."
+                                  class="form-control"></textarea>
+                        <div class="text-danger small mt-1" id="notes-error"></div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check text-success me-1"></i>
+                        Paiement sécurisé via PayPal
+                    </small>
+                    <div>
+                        <button type="button" 
+                                class="btn btn-secondary me-2" 
+                                data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <button type="submit" 
+                                form="test48hForm"
+                                id="submitBtn"
+                                class="btn btn-warning">
+                            <i class="bi bi-credit-card me-2"></i>Demander le test - 3€
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -438,5 +566,166 @@
     .min-vh-75 {
         min-height: 75vh;
     }
+
+    .hidden {
+        display: none !important;
+    }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    // Fonctions pour ouvrir/fermer le modal
+    function openTest48hModal() {
+        const modal = new bootstrap.Modal(document.getElementById('test48hModal'));
+        modal.show();
+    }
+
+    function closeTest48hModal() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('test48hModal'));
+        if (modal) {
+            modal.hide();
+        }
+        resetForm();
+    }
+
+    // Gestion du changement de type d'appareil
+    document.addEventListener('DOMContentLoaded', function() {
+        const deviceTypeSelect = document.getElementById('device_type');
+        const macAddressField = document.getElementById('mac_address_field');
+        const macAddressInput = document.getElementById('mac_address');
+
+        if (deviceTypeSelect) {
+            deviceTypeSelect.addEventListener('change', function() {
+                if (this.value === 'mag') {
+                    macAddressField.classList.remove('d-none');
+                    macAddressInput.required = true;
+                } else {
+                    macAddressField.classList.add('d-none');
+                    macAddressInput.required = false;
+                    macAddressInput.value = '';
+                    clearError('mac_address');
+                }
+            });
+        }
+
+        // Gestion du formulaire
+        const form = document.getElementById('test48hForm');
+        if (form) {
+            form.addEventListener('submit', handleFormSubmit);
+        }
+
+        // Réinitialiser le formulaire quand le modal se ferme
+        const modal = document.getElementById('test48hModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                resetForm();
+            });
+        }
+    });
+
+    // Soumission du formulaire
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Reset errors
+        clearAllErrors();
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split mr-2"></i>Envoi en cours...';
+        
+        try {
+            const response = await fetch('{{ route("test-request.store") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Success
+                showSuccessMessage(data.message);
+                closeTest48hModal();
+            } else {
+                // Errors
+                if (data.errors) {
+                    displayErrors(data.errors);
+                } else {
+                    showErrorMessage(data.message || 'Une erreur est survenue.');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showErrorMessage('Une erreur de connexion est survenue. Veuillez réessayer.');
+        } finally {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-credit-card mr-2"></i>Demander le test - 3€';
+        }
+    }
+
+    // Affichage des erreurs
+    function displayErrors(errors) {
+        Object.keys(errors).forEach(field => {
+            const errorElement = document.getElementById(field + '-error');
+            if (errorElement) {
+                errorElement.textContent = errors[field][0];
+            }
+        });
+    }
+
+    // Effacer toutes les erreurs
+    function clearAllErrors() {
+        const errorElements = document.querySelectorAll('[id$="-error"]');
+        errorElements.forEach(element => {
+            element.textContent = '';
+        });
+    }
+
+    // Effacer une erreur spécifique
+    function clearError(field) {
+        const errorElement = document.getElementById(field + '-error');
+        if (errorElement) {
+            errorElement.textContent = '';
+        }
+    }
+
+    // Reset du formulaire
+    function resetForm() {
+        const form = document.getElementById('test48hForm');
+        if (form) {
+            form.reset();
+            clearAllErrors();
+            document.getElementById('mac_address_field').classList.add('d-none');
+            document.getElementById('mac_address').required = false;
+        }
+    }
+
+    // Messages de succès/erreur
+    function showSuccessMessage(message) {
+        // Utiliser le système de notification existant ou créer une alerte
+        if (typeof showNotification === 'function') {
+            showNotification(message, 'success');
+        } else {
+            alert('✅ ' + message);
+        }
+    }
+
+    function showErrorMessage(message) {
+        if (typeof showNotification === 'function') {
+            showNotification(message, 'error');
+        } else {
+            alert('❌ ' + message);
+        }
+    }
+</script>
 @endpush

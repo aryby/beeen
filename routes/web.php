@@ -44,6 +44,11 @@ Route::get('/tutorials/{tutorial}/step/{step}', [TutorialController::class, 'ste
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+// Routes des demandes de test 48h
+Route::post('/test-request', [App\Http\Controllers\TestRequestController::class, 'store'])->name('test-request.store');
+Route::get('/test-request/device-types', [App\Http\Controllers\TestRequestController::class, 'getDeviceTypes'])->name('test-request.device-types');
+Route::post('/test-request/check-mac', [App\Http\Controllers\TestRequestController::class, 'checkMacRequirement'])->name('test-request.check-mac');
+
 // Routes des revendeurs (publiques)
 Route::get('/resellers', [ResellerController::class, 'index'])->name('resellers.index');
 Route::get('/resellers/checkout/{pack}', [ResellerController::class, 'checkout'])->name('resellers.checkout');
