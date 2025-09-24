@@ -17,7 +17,7 @@
                             </span>
                             <br>
                             <span style="background: linear-gradient(310deg, #17c1e8 0%, #21d4fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                                100% Légal
+                                Meilleur prix
                             </span>
                         </h1>
                         <p class="lead mb-4 opacity-75" style="font-size: 1.25rem;">
