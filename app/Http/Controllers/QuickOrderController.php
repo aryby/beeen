@@ -115,6 +115,13 @@ class QuickOrderController extends Controller
                     'client_secret' => !empty(Setting::get('paypal_client_secret'))
                 ]);
                 
+                // En production, ne pas simuler
+                if (app()->environment('production')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Paiement indisponible actuellement. Merci de réessayer plus tard.'
+                    ], 502);
+                }
                 // Mode simulation pour développement
                 return $this->simulateQuickPayment($order, $validated['item_type']);
             }
@@ -129,8 +136,8 @@ class QuickOrderController extends Controller
                 $order->amount,
                 $order->currency,
                 $description,
-                route('payment.success') . '?order=' . $order->id,
-                route('payment.cancel') . '?order=' . $order->id
+                route('payment.success', ['order' => $order->id]),
+                route('payment.cancel', ['order' => $order->id])
             );
 
             \Log::info('PayPal payment result', $result);
@@ -169,6 +176,13 @@ class QuickOrderController extends Controller
                     ]);
                 }
                 
+                // En production, ne pas simuler
+                if (app()->environment('production')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Impossible d\'initialiser le paiement PayPal. Merci de réessayer plus tard.'
+                    ], 502);
+                }
                 // Fallback final vers simulation
                 return $this->simulateQuickPayment($order, $validated['item_type']);
             }
@@ -176,7 +190,14 @@ class QuickOrderController extends Controller
         } catch (\Exception $e) {
             \Log::error('Quick Order Error: ' . $e->getMessage());
             
-            // Fallback vers simulation en cas d'erreur
+            // En production, ne pas simuler
+            if (app()->environment('production')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors du traitement de la commande. Merci de réessayer plus tard.'
+                ], 500);
+            }
+            // Fallback vers simulation en cas d'erreur en dev
             if (isset($order)) {
                 return $this->simulateQuickPayment($order, $validated['item_type']);
             }
