@@ -257,9 +257,17 @@ class QuickOrderController extends Controller
             $redirectUrl = route('payment.pending', ['order' => $order->id]);
         }
 
+        // Construire l'URL finale correctement selon la présence de query params
+        $paypalUrl = $redirectUrl;
+        if (str_contains($redirectUrl, '?')) {
+            $paypalUrl = $redirectUrl . '&simulation=1';
+        } else {
+            $paypalUrl = $redirectUrl . '?simulation=1';
+        }
+
         return response()->json([
             'success' => true,
-            'paypal_url' => $redirectUrl . '?simulation=1',
+            'paypal_url' => $paypalUrl,
             'order_id' => $order->id,
             'simulation' => true
         ]);
