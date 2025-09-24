@@ -14,8 +14,8 @@ class PayPalServiceAlternative
 
     public function __construct()
     {
-        $this->clientId = Setting::get('paypal_client_id');
-        $this->clientSecret = Setting::get('paypal_client_secret');
+        $this->clientId = trim((string) Setting::get('paypal_client_id'));
+        $this->clientSecret = trim((string) Setting::get('paypal_client_secret'));
         $this->baseUrl = Setting::get('paypal_sandbox', false) 
             ? 'https://api.sandbox.paypal.com' 
             : 'https://api.paypal.com';

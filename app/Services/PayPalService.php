@@ -15,9 +15,10 @@ class PayPalService
 
     public function __construct()
     {
-        $this->clientId = Setting::get('paypal_client_id') ?: env('PAYPAL_CLIENT_ID');
-        $this->clientSecret = Setting::get('paypal_client_secret') ?: env('PAYPAL_CLIENT_SECRET');
-        $this->baseUrl = (Setting::get('paypal_sandbox', true) || env('PAYPAL_SANDBOX', false))
+        $this->clientId = trim((string)(Setting::get('paypal_client_id') ?: env('PAYPAL_CLIENT_ID', '')));
+        $this->clientSecret = trim((string)(Setting::get('paypal_client_secret') ?: env('PAYPAL_CLIENT_SECRET', '')));
+        $sandbox = (bool) (Setting::get('paypal_sandbox', false) || env('PAYPAL_SANDBOX', false));
+        $this->baseUrl = $sandbox
             ? 'https://api.sandbox.paypal.com' 
             : 'https://api.paypal.com';
     }
@@ -36,7 +37,8 @@ class PayPalService
             Log::info('PayPal Token Request', [
                 'base_url' => $this->baseUrl,
                 'client_id' => substr($this->clientId, 0, 10) . '...',
-                'has_secret' => !empty($this->clientSecret)
+                'has_secret' => !empty($this->clientSecret),
+                'sandbox' => str_contains($this->baseUrl, 'sandbox')
             ]);
 
             $response = Http::withBasicAuth($this->clientId, $this->clientSecret)
