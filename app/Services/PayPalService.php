@@ -17,7 +17,7 @@ class PayPalService
     {
         $this->clientId = Setting::get('paypal_client_id') ?: env('PAYPAL_CLIENT_ID');
         $this->clientSecret = Setting::get('paypal_client_secret') ?: env('PAYPAL_CLIENT_SECRET');
-        $this->baseUrl = (Setting::get('paypal_sandbox', true) || env('PAYPAL_SANDBOX', true))
+        $this->baseUrl = (Setting::get('paypal_sandbox', true) || env('PAYPAL_SANDBOX', false))
             ? 'https://api.sandbox.paypal.com' 
             : 'https://api.paypal.com';
     }

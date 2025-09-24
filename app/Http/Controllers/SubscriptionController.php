@@ -104,7 +104,7 @@ class SubscriptionController extends Controller
                 $order->amount,
                 $order->currency,
                 "Abonnement {$order->subscription->name} - {$order->order_number}",
-                route('payment.success', ['order' => $order->id, 'token' => '__TOKEN__']),
+                route('payment.success', ['order' => $order->id]),
                 route('payment.cancel', ['order' => $order->id])
             );
 
@@ -120,6 +120,10 @@ class SubscriptionController extends Controller
             }
         } catch (\Exception $e) {
             Log::error('PayPal Error: ' . $e->getMessage());
+            if (app()->environment('production')) {
+                return redirect()->route('subscriptions.index')
+                    ->with('error', "Paiement indisponible pour le moment. Réessayez plus tard ou contactez le support.");
+            }
             return $this->simulatePayment($order);
         }
     }
