@@ -72,12 +72,13 @@
                             <a href="{{ route('tutorials.index') }}" class="btn btn-soft-outline btn-lg px-4" style="border-color: white; color: white;">
                                 <i class="bi bi-play-circle me-2"></i>Voir les tutoriels
                             </a>
+                          
                             <button type="button" 
-                                    class="btn btn-soft btn-soft-warning btn-lg px-4"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#test48hModal">
-                                <i class="bi bi-clock me-2"></i>Test 48 heures - 3€
-                            </button>
+                                        class="btn btn-soft btn-soft-warning btn-lg px-4"
+                                        onclick="openQuickOrderModal('subscription', 5, 'Test 24 Heures', 
+                                        3, 'Abonnement IPTV Test 48 Heures', 'Test 48 Heures')">
+                                    <i class="bi bi-lightning-charge me-2"></i>Test 48 heures - 3€ 
+                                </button>
                             
                         </div>
                     </div>
@@ -168,67 +169,70 @@
         
         <div class="row justify-content-center">
             @foreach($subscriptions as $index => $subscription)
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <div class="pricing-card {{ $index === 1 ? 'featured' : '' }} h-100">
-                        <div class="card-body text-center p-4">
-                            <h4 class="fw-bold mb-3" style="color: var(--soft-dark);">{{ $subscription->name }}</h4>
-                            
-                            <div class="mb-4">
-                                <span class="display-4 fw-bold" style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                                    {{ number_format($subscription->price, 0) }}€
-                                </span>
-                                <div class="text-muted">{{ $subscription->duration_text }}</div>
-                            </div>
-                            
-                            @if($subscription->duration_months > 1)
-                                <div class="alert alert-soft alert-success small mb-4">
-                                    <i class="bi bi-calculator me-1"></i>
-                                    Soit {{ number_format($subscription->price / $subscription->duration_months, 2) }}€/mois
-                                </div>
-                            @endif
-                            
-                            <ul class="list-unstyled mb-4">
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-success me-2"></i>
-                                    <span><strong>12000+</strong> Chaînes HD/4K</span>
-                                </li>
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-success me-2"></i>
-                                    <span><strong>VOD</strong> Illimité</span>
-                                </li>
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-success me-2"></i>
-                                    <span><strong>Sans</strong> Publicité</span>
-                                </li>
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-success me-2"></i>
-                                    <span><strong>Support</strong> 24/7</span>
-                                </li>
-                                <li class="mb-2 d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-success me-2"></i>
-                                    <span><strong>Multi</strong>-appareils</span>
-                                </li>
-                            </ul>
-                            
-                            @auth
-                                <a href="{{ route('subscriptions.checkout', $subscription) }}" 
-                                   class="btn btn-soft btn-soft-primary w-100 mb-3">
-                                    <i class="bi bi-cart-plus me-2"></i>Commander
-                                </a>
-                            @else
-                                <button type="button" 
-                                        class="btn btn-soft btn-soft-primary w-100 mb-3"
-                                        onclick="openQuickOrderModal('subscription', {{ $subscription->id }}, '{{ $subscription->name }}', '{{ $subscription->formatted_price }}', 'Abonnement IPTV {{ $subscription->duration_text }}', '{{ $subscription->duration_text }}')">
-                                    <i class="bi bi-lightning-charge me-2"></i>Commander Rapidement
-                                </button>
-                            @endauth
-                            
-                            <small class="text-muted">
-                                <i class="bi bi-shield-check me-1 text-success"></i>Paiement sécurisé
-                            </small>
+            @if ($subscription->price > 4)
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="pricing-card {{ $index === 2 ? 'featured' : '' }} h-100">
+                    <div class="card-body text-center p-4">
+                        <h4 class="fw-bold mb-3" style="color: var(--soft-dark);">{{ $subscription->name }}</h4>
+                        
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold" style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                                {{ number_format($subscription->price, 0) }}€
+                            </span>
+                            <div class="text-muted">{{ $subscription->duration_text }}</div>
                         </div>
+                        
+                        @if($subscription->duration_months > 1)
+                            <div class="alert alert-soft alert-success small mb-4">
+                                <i class="bi bi-calculator me-1"></i>
+                                Soit {{ number_format($subscription->price / $subscription->duration_months, 2) }}€/mois
+                            </div>
+                        @endif
+                        
+                        <ul class="list-unstyled mb-4">
+                            <li class="mb-2 d-flex align-items-center">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span><strong>12000+</strong> Chaînes HD/4K</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-center">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span><strong>VOD</strong> Illimité</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-center">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span><strong>Sans</strong> Publicité</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-center">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span><strong>Support</strong> 24/7</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-center">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span><strong>Multi</strong>-appareils</span>
+                            </li>
+                        </ul>
+                        
+                        @auth
+                            <a href="{{ route('subscriptions.checkout', $subscription) }}" 
+                               class="btn btn-soft btn-soft-primary w-100 mb-3">
+                                <i class="bi bi-cart-plus me-2"></i>Commander
+                            </a>
+                        @else
+                            <button type="button" 
+                                    class="btn btn-soft btn-soft-primary w-100 mb-3"
+                                    onclick="openQuickOrderModal('subscription', {{ $subscription->id }}, '{{ $subscription->name }}', '{{ $subscription->formatted_price }}', 'Abonnement IPTV {{ $subscription->duration_text }}', '{{ $subscription->duration_text }}')">
+                                <i class="bi bi-lightning-charge me-2"></i>Commander Rapidement
+                            </button>
+                        @endauth
+                        
+                        <small class="text-muted">
+                            <i class="bi bi-shield-check me-1 text-success"></i>Paiement sécurisé
+                        </small>
                     </div>
                 </div>
+            </div>
+            @endif
+               
             @endforeach
         </div>
     </div>
