@@ -37,6 +37,10 @@ class Order extends Model
         'refund_amount',
         'refund_reason',
         'refunded_at',
+        'device_type',
+        'mac_address',
+        'notes',
+        'order_type',
     ];
 
     protected function casts(): array
@@ -150,9 +154,34 @@ class Order extends Model
     public function setExpirationDate()
     {
         if ($this->subscription && $this->isPaid()) {
-            $this->expires_at = now()->addMonths($this->subscription->duration_months);
+            if ($this->subscription->isTestSubscription()) {
+                // Pour les tests 48h
+                $this->expires_at = now()->addHours($this->subscription->getTestDurationHours());
+            } else {
+                // Pour les abonnements normaux
+                $this->expires_at = now()->addMonths($this->subscription->duration_months);
+            }
             $this->save();
         }
+    }
+
+    public function isTestOrder()
+    {
+        return $this->order_type === 'test_48h' || ($this->subscription && $this->subscription->isTestSubscription());
+    }
+
+    public function getDeviceTypeLabelAttribute()
+    {
+        return match($this->device_type) {
+            'smart_tv' => 'Smart TV',
+            'android' => 'Android',
+            'apple' => 'Apple TV / iOS',
+            'kodi' => 'Kodi',
+            'mag' => 'MAG Box',
+            'pc' => 'PC / Windows',
+            'other' => 'Autre',
+            default => $this->device_type ?? 'Non spécifié'
+        };
     }
 
     /**

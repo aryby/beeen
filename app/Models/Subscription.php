@@ -56,8 +56,21 @@ class Subscription extends Model
 
     public function getDurationTextAttribute()
     {
+        if ($this->duration_months === 0) {
+            return 'Test 48h';
+        }
         return $this->duration_months === 1 
             ? '1 mois' 
             : $this->duration_months . ' mois';
+    }
+
+    public function isTestSubscription()
+    {
+        return $this->duration_months === 0;
+    }
+
+    public function getTestDurationHours()
+    {
+        return 48; // 48 heures pour le test
     }
 }

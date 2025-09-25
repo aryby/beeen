@@ -17,7 +17,7 @@
                             </span>
                             <br>
                             <span style="background: linear-gradient(310deg, #17c1e8 0%, #21d4fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                                100% Légal
+                                Meilleur Rapport Qualité/Prix
                             </span>
                         </h1>
                         <p class="lead mb-4 opacity-75" style="font-size: 1.25rem;">
@@ -76,7 +76,7 @@
                                     class="btn btn-soft btn-soft-warning btn-lg px-4"
                                     data-bs-toggle="modal" 
                                     data-bs-target="#test48hModal">
-                                <i class="bi bi-clock me-2"></i>Test 48h - 3€
+                                <i class="bi bi-clock me-2"></i>Test 48 heures - 3€
                             </button>
                             
                         </div>
@@ -652,9 +652,13 @@
             const data = await response.json();
             
             if (data.success) {
-                // Success
-                showSuccessMessage(data.message);
-                closeTest48hModal();
+                // Success - Rediriger vers PayPal
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    showSuccessMessage(data.message);
+                    closeTest48hModal();
+                }
             } else {
                 // Errors
                 if (data.errors) {

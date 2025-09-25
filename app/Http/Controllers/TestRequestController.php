@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TestRequest;
+use App\Models\Subscription;
+use App\Models\Order;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestRequestConfirmation;
@@ -11,7 +13,7 @@ use App\Mail\TestRequestConfirmation;
 class TestRequestController extends Controller
 {
     /**
-     * Store a new test request
+     * Store a new test request and redirect to PayPal checkout
      */
     public function store(Request $request)
     {
@@ -41,17 +43,20 @@ class TestRequestController extends Controller
             });
         }
 
-        // Vérifier si une demande récente existe déjà pour cet email
-        $recentRequest = TestRequest::where('email', $request->email)
+        // Vérifier si une commande de test récente existe déjà pour cet email
+        $recentOrder = Order::where('customer_email', $request->email)
+            ->whereHas('subscription', function($query) {
+                $query->where('duration_months', 0); // Test 48h
+            })
             ->where('created_at', '>', now()->subDays(7))
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['pending', 'validated'])
             ->first();
 
-        if ($recentRequest) {
+        if ($recentOrder) {
             return response()->json([
                 'success' => false,
-                'message' => 'Une demande de test est déjà en cours pour cette adresse email. Veuillez patienter ou contacter le support.',
-                'errors' => ['email' => ['Une demande récente existe déjà pour cette adresse email.']]
+                'message' => 'Une commande de test est déjà en cours pour cette adresse email. Veuillez patienter ou contacter le support.',
+                'errors' => ['email' => ['Une commande de test récente existe déjà pour cette adresse email.']]
             ], 422);
         }
 
@@ -64,39 +69,43 @@ class TestRequestController extends Controller
         }
 
         try {
-            // Créer la demande de test
-            $testRequest = TestRequest::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'device_type' => $request->device_type,
-                'mac_address' => $request->mac_address,
-                'notes' => $request->notes,
-                'status' => 'pending',
-            ]);
-
-            // Envoyer un email de confirmation
-            try {
-                Mail::to($request->email)->send(new TestRequestConfirmation($testRequest));
-            } catch (\Exception $e) {
-                // Log l'erreur mais ne pas faire échouer la demande
-                \Log::error('Erreur envoi email confirmation test: ' . $e->getMessage());
+            // Récupérer l'abonnement de test 48h
+            $testSubscription = Subscription::where('duration_months', 0)->first();
+            
+            if (!$testSubscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Service de test temporairement indisponible.',
+                ], 500);
             }
 
+            // Stocker les données du formulaire dans la session pour le checkout
+            session([
+                'test_form_data' => [
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'device_type' => $request->device_type,
+                    'mac_address' => $request->mac_address,
+                    'notes' => $request->notes,
+                ]
+            ]);
+
+            // Rediriger vers le checkout
             return response()->json([
                 'success' => true,
-                'message' => 'Votre demande de test 48h a été envoyée avec succès ! Vous recevrez une confirmation par email.',
+                'redirect' => route('subscriptions.checkout', $testSubscription),
+                'message' => 'Redirection vers le paiement...',
                 'data' => [
-                    'id' => $testRequest->id,
-                    'device_type' => $testRequest->device_type_label
+                    'subscription_name' => $testSubscription->name
                 ]
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Erreur création demande test: ' . $e->getMessage());
+            \Log::error('Erreur création commande test: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors de l\'envoi de votre demande. Veuillez réessayer ou contacter le support.',
+                'message' => 'Une erreur est survenue lors de la création de votre commande. Veuillez réessayer ou contacter le support.',
             ], 500);
         }
     }

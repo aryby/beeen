@@ -33,6 +33,7 @@ class InitialDataSeeder extends Seeder
 
         // Créer les abonnements par défaut
         $subscriptions = [
+            ['name' => 'Test 48h', 'duration_months' => 0, 'price' => 3.00, 'description' => 'Test IPTV 48h - Accès complet pour tester notre service'],
             ['name' => '1 Mois', 'duration_months' => 1, 'price' => 15.99],
             ['name' => '3 Mois', 'duration_months' => 3, 'price' => 39.99],
             ['name' => '6 Mois', 'duration_months' => 6, 'price' => 69.99],
@@ -40,10 +41,12 @@ class InitialDataSeeder extends Seeder
         ];
 
         foreach ($subscriptions as $sub) {
+            $defaultDescription = isset($sub['description']) ? $sub['description'] : 'Accès complet à plus de 12000 chaînes HD, VOD illimité, sans publicité avec support 24/7.';
+            
             Subscription::updateOrCreate(
                 ['name' => $sub['name']],
                 array_merge($sub, [
-                    'description' => 'Accès complet à plus de 12000 chaînes HD, VOD illimité, sans publicité avec support 24/7.',
+                    'description' => $defaultDescription,
                     'is_active' => true,
                 ])
             );

@@ -38,25 +38,49 @@ class SubscriptionController extends Controller
                 ->with('error', 'Cet abonnement n\'est plus disponible.');
         }
 
-        // Rediriger les visiteurs non connectés vers la page de connexion
-        if (!auth()->check()) {
+        // Pour les tests 48h, permettre l'accès sans connexion
+        if (!auth()->check() && !$subscription->isTestSubscription()) {
             session(['intended_checkout' => route('subscriptions.checkout', $subscription)]);
             return redirect()->route('login')
                 ->with('info', 'Veuillez vous connecter pour commander un abonnement.');
         }
 
-        return view('subscriptions.checkout', compact('subscription'));
+        // Pour les tests 48h, récupérer les données du formulaire depuis la session
+        $testFormData = null;
+        if ($subscription->isTestSubscription() && session('test_form_data')) {
+            $testFormData = session('test_form_data');
+            // Nettoyer la session après récupération
+            session()->forget('test_form_data');
+        }
+
+        return view('subscriptions.checkout', compact('subscription', 'testFormData'));
     }
 
     public function processCheckout(Request $request, Subscription $subscription)
     {
-        $validated = $request->validate([
+        $validationRules = [
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
             'customer_address' => 'nullable|string|max:1000',
             'terms_accepted' => 'required|accepted',
             'g-recaptcha-response' => 'required', // reCAPTCHA validation
-        ]);
+        ];
+
+        // Pour les tests 48h, ajouter la validation des champs d'appareil
+        if ($subscription->isTestSubscription()) {
+            $validationRules['device_type'] = 'required|in:smart_tv,android,apple,kodi,mag,pc,other';
+            $validationRules['mac_address'] = 'nullable|string|max:17';
+            $validationRules['notes'] = 'nullable|string|max:1000';
+        }
+
+        $validated = $request->validate($validationRules);
+
+        // Vérification spéciale pour MAC address si MAG est sélectionné
+        if ($subscription->isTestSubscription() && $validated['device_type'] === 'mag') {
+            if (empty($validated['mac_address'])) {
+                return back()->withErrors(['mac_address' => 'L\'adresse MAC est obligatoire pour les appareils MAG.'])->withInput();
+            }
+        }
 
         // Vérifier reCAPTCHA
         $recaptchaSecret = Setting::get('recaptcha_secret_key');
@@ -71,9 +95,8 @@ class SubscriptionController extends Controller
         }
 
         // Créer la commande
-        $order = Order::create([
+        $orderData = [
             'order_number' => 'ORD-' . strtoupper(Str::random(10)),
-            'user_id' => auth()->id(),
             'subscription_id' => $subscription->id,
             'customer_name' => $validated['customer_name'],
             'customer_email' => $validated['customer_email'],
@@ -81,7 +104,23 @@ class SubscriptionController extends Controller
             'amount' => $subscription->price,
             'currency' => 'EUR',
             'status' => 'pending',
-        ]);
+            'is_guest_order' => !auth()->check(),
+        ];
+
+        // Ajouter l'ID utilisateur si connecté
+        if (auth()->check()) {
+            $orderData['user_id'] = auth()->id();
+        }
+
+        // Pour les tests 48h, ajouter les informations d'appareil
+        if ($subscription->isTestSubscription()) {
+            $orderData['order_type'] = 'test_48h';
+            $orderData['device_type'] = $request->input('device_type');
+            $orderData['mac_address'] = $request->input('mac_address');
+            $orderData['notes'] = $request->input('notes');
+        }
+
+        $order = Order::create($orderData);
 
         // Rediriger vers PayPal
         return $this->redirectToPayPal($order);
