@@ -102,8 +102,8 @@ class M3UExtractorService
         // Generate M3U credentials
         $order->m3u_username = $order->iptv_code;
         $order->m3u_password = $order->iptv_code;
-        $order->m3u_server_url = 'https://iptv2smartv.com/';
-        $order->m3u_url = "https://iptv2smartv.com/?username={$order->iptv_code}&password={$order->iptv_code}&type=m3u_plus";
+        $order->m3u_server_url = 'http://live.mypythontv.com/get.php';
+        $order->m3u_url = "http://live.mypythontv.com/?username={$order->iptv_code}&password={$order->iptv_code}&type=m3u_plus";
         $order->m3u_generated = true;
         $order->m3u_generated_at = now();
         $order->save();

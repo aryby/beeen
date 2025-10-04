@@ -223,12 +223,12 @@
                                                title="Facture">
                                                 <i class="bi bi-file-pdf"></i>
                                             </a>
-                                            <button type="button" 
+                                            {{-- <button type="button" 
                                                     class="btn btn-sm btn-outline-warning" 
                                                     title="Rembourser"
                                                     onclick="showRefundModal({{ $order->id }}, '{{ $order->order_number }}', {{ $order->amount }})">
                                                 <i class="bi bi-arrow-return-left"></i>
-                                            </button>
+                                            </button> --}}
                                         @endif
                                         
                                         @if($order->isPending() || $order->isCancelled())

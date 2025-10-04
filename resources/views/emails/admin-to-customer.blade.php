@@ -19,11 +19,6 @@ Vous recevez ce message de la part de notre équipe {{ config('app.name') }}.
 
 ---
 
-@if($order)
-<x-mail::button :url="route('customer.dashboard')" color="primary">
-Voir ma commande
-</x-mail::button>
-@endif
 
 ## 📞 Besoin d'aide ?
 
